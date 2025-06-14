@@ -7,7 +7,7 @@ function MapPage() {
   const [slider_pc1, setSliderPc1] = useState(50);
   const [slider_pc2, setSliderPc2] = useState(50);
   const [userRatings, setUserRatings] = useState({});
-  const [zoomLevel, setZoomLevel] = useState(2.0); // ✅ 初期ズームイン
+  const [zoomLevel, setZoomLevel] = useState(2.0);
   const zoomFactor = 1 / zoomLevel;
 
   useEffect(() => {
@@ -90,9 +90,20 @@ function MapPage() {
     const jan = item.JAN;
     const currentRating = userRatings[jan] || 0;
     const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
+    const detailUrl = `https://yourdomain.com/products/${jan}`;
+
     return (
       <div key={jan} className="top10-item">
-        <strong>{`${index + 1}.`} {item['商品名']} ({item.Type}) {price}</strong>
+        <strong>
+          <a
+            href={detailUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: 'none', color: 'black' }}
+          >
+            {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
+          </a>
+        </strong>
         <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
           <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>
             {ratingOptions.map((label, idx) => (
@@ -148,14 +159,14 @@ function MapPage() {
             typeList.map(type => ({
               x: data.filter(d => d.Type === type).map(d => d.BodyAxis),
               y: data.filter(d => d.Type === type).map(d => d.SweetAxis),
-              text: data.filter(d => d.Type === type).map(d => `${d["商品名"]}`), // 商品名のみ表示
-              hoverinfo: 'text+name', // ✅ 座標（x,y）は非表示にする
+              text: data.filter(d => d.Type === type).map(d => `${d["商品名"]}`),
+              hoverinfo: 'text+name',
               mode: 'markers',
               type: 'scatter',
               marker: { size: 5, color: typeColor[type] },
               name: type,
             })),
-             ...Object.entries(userRatings).filter(([jan, rating]) => rating > 0).map(([jan, rating]) => {
+            ...Object.entries(userRatings).filter(([jan, rating]) => rating > 0).map(([jan, rating]) => {
               const wine = data.find(d => String(d.JAN).trim() === String(jan).trim());
               if (!wine) return null;
               return {
@@ -188,7 +199,6 @@ function MapPage() {
               name: 'TOP10', showlegend: false,
               hoverinfo: 'text',
             },
-            
           ]}
           layout={{
             margin: { l: 30, r: 30, t: 30, b: 30 }, dragmode: 'pan',
