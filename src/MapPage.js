@@ -12,30 +12,31 @@ function MapPage() {
   const [zoomLevel, setZoomLevel] = useState(2.0);
 
   const handleRatingChange = (jan, rating) => {
-  const updated = { ...userRatings, [jan]: rating };
-  setUserRatings(updated);
-  localStorage.setItem('userRatings', JSON.stringify(updated));
-};
+    const updated = { ...userRatings, [jan]: rating };
+    setUserRatings(updated);
+    localStorage.setItem('userRatings', JSON.stringify(updated));
+  };
+
+  const handleRatingDelete = (jan) => {
+    const updated = { ...userRatings };
+    delete updated[jan];
+    setUserRatings(updated);
+    localStorage.setItem('userRatings', JSON.stringify(updated));
+  };
 
   const loadUserRatings = () => {
-  const stored = localStorage.getItem('userRatings');
-  setUserRatings(stored ? JSON.parse(stored) : {});
-};
+    const stored = localStorage.getItem('userRatings');
+    setUserRatings(stored ? JSON.parse(stored) : {});
+  };
 
   useEffect(() => {
-  // 初回ロード
-  loadUserRatings();
-
-  // 他タブ更新を検知
-  const handleStorage = (e) => {
-    if (e.key === 'userRatings') {
-      loadUserRatings();
-    }
-  };
-  window.addEventListener('storage', handleStorage);
-  return () => window.removeEventListener('storage', handleStorage);
+    loadUserRatings();
+    const handleStorage = (e) => {
+      if (e.key === 'userRatings') loadUserRatings();
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
-
 
   useEffect(() => {
     Promise.all([
@@ -58,7 +59,11 @@ function MapPage() {
       const pcaData = parseCSV(pcaText);
       const metaData = parseCSV(metaText);
       const metaMap = Object.fromEntries(metaData.map(d => [String(d.JAN), d]));
-      const merged = pcaData.map(d => ({ ...d, 希望小売価格: metaMap[String(d.JAN)]?.希望小売価格 || null, ...metaMap[String(d.JAN)] }));
+      const merged = pcaData.map(d => ({
+        ...d,
+        希望小売価格: metaMap[String(d.JAN)]?.希望小売価格 || null,
+        ...metaMap[String(d.JAN)]
+      }));
       setData(merged);
     });
   }, []);
@@ -77,16 +82,8 @@ function MapPage() {
   const range_up_y = blendF ? y_max - blendF.SweetAxis : 0;
 
   const target = useMemo(() => ({
-    x: blendF
-      ? slider_pc1 <= 50
-        ? blendF.BodyAxis - ((50 - slider_pc1) / 50) * range_left_x
-        : blendF.BodyAxis + ((slider_pc1 - 50) / 50) * range_right_x
-      : 0,
-    y: blendF
-      ? slider_pc2 <= 50
-        ? blendF.SweetAxis - ((50 - slider_pc2) / 50) * range_down_y
-        : blendF.SweetAxis + ((slider_pc2 - 50) / 50) * range_up_y
-      : 0,
+    x: blendF ? blendF.BodyAxis + ((slider_pc1 - 50) / 50) * (slider_pc1 <= 50 ? -range_left_x : range_right_x) : 0,
+    y: blendF ? blendF.SweetAxis + ((slider_pc2 - 50) / 50) * (slider_pc2 <= 50 ? -range_down_y : range_up_y) : 0
   }), [blendF, slider_pc1, slider_pc2, range_left_x, range_right_x, range_down_y, range_up_y]);
 
   const distances = useMemo(() => {
@@ -116,12 +113,17 @@ function MapPage() {
               {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
             </Link>
           </strong>
-          <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '10px' }}>
             <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>
               {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
                 <option key={idx} value={idx}>{label}</option>
               ))}
             </select>
+            {currentRating > 0 && (
+              <button onClick={() => handleRatingDelete(jan)} style={{ fontSize: '0.8rem' }}>
+                削除
+              </button>
+            )}
           </div>
         </div>
       );
