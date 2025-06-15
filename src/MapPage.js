@@ -47,6 +47,16 @@ function MapPage() {
     });
   }, []);
 
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.startsWith('#rank-')) {
+      const el = document.getElementById(hash.replace('#', ''));
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, []);
+
   const blendF = data.find((d) => d.JAN === 'blendF');
   const xValues = data.map((d) => d.BodyAxis);
   const yValues = data.map((d) => d.SweetAxis);
@@ -93,9 +103,9 @@ function MapPage() {
       const currentRating = userRatings[jan] || 0;
       const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
       return (
-        <div key={jan} className="top10-item">
+        <div key={jan} className="top10-item" id={`rank-${index + 1}`}>
           <strong>
-            <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
+            <Link to={`/products/${jan}?rank=${index + 1}`} style={{ textDecoration: 'none', color: 'black' }}>
               {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
             </Link>
           </strong>
@@ -127,16 +137,14 @@ function MapPage() {
       x: data.filter(d => d.Type === type).map(d => d.BodyAxis),
       y: data.filter(d => d.Type === type).map(d => d.SweetAxis),
       text: data.filter(d => d.Type === type).map(d => `${d["商品名"]}`),
-      hoverinfo: 'text+name',
-      mode: 'markers', type: 'scatter',
+      hoverinfo: 'text+name', mode: 'markers', type: 'scatter',
       marker: { size: 5, color: typeColor[type] }, name: type,
     })),
     ...Object.entries(userRatings).filter(([jan, rating]) => rating > 0).map(([jan, rating]) => {
       const wine = data.find(d => String(d.JAN).trim() === String(jan).trim());
       if (!wine) return null;
       return {
-        x: [wine.BodyAxis], y: [wine.SweetAxis],
-        text: [""],
+        x: [wine.BodyAxis], y: [wine.SweetAxis], text: [""],
         mode: 'markers+text', type: 'scatter',
         marker: {
           size: rating * 6 + 8, color: 'orange', opacity: 0.8,
@@ -152,14 +160,14 @@ function MapPage() {
 
   return (
     <div style={{ padding: '10px' }}>
-      <h2>基準のワインを飲んだ印象は？</h2>
+      <h2 style={{ textAlign: 'center' }}>基準のワインを飲んだ印象は？</h2>
 
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
           <span>← こんなに甘みは不要</span>
           <span>もっと甘みが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc2} style={{ width: '100%' }} onChange={(e) => setSliderPc2(Number(e.target.value))} />
+        <input type="range" min="0" max="100" value={slider_pc2} style={{ width: '100%', height: '30px' }} onChange={(e) => setSliderPc2(Number(e.target.value))} />
       </div>
 
       <div style={{ marginBottom: '20px' }}>
@@ -167,12 +175,12 @@ function MapPage() {
           <span>← もっと軽やかが良い</span>
           <span>濃厚なコクが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc1} style={{ width: '100%' }} onChange={(e) => setSliderPc1(Number(e.target.value))} />
+        <input type="range" min="0" max="100" value={slider_pc1} style={{ width: '100%', height: '30px' }} onChange={(e) => setSliderPc1(Number(e.target.value))} />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
-        <button onClick={() => setZoomLevel((z) => Math.min(z + 0.1, 5))}>+</button>
-        <button onClick={() => setZoomLevel((z) => Math.max(z - 0.1, 0.2))}>-</button>
+        <button onClick={() => setZoomLevel((z) => Math.min(z + 0.1, 5))}>＋</button>
+        <button onClick={() => setZoomLevel((z) => Math.max(z - 0.1, 0.2))}>－</button>
       </div>
 
       <div className="plot-container">
