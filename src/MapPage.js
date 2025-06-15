@@ -9,7 +9,7 @@ function MapPage() {
   const [slider_pc1, setSliderPc1] = useState(50);
   const [slider_pc2, setSliderPc2] = useState(50);
   const [userRatings, setUserRatings] = useState({});
-  const [zoomLevel, setZoomLevel] = useState(1.0);
+  const [zoomLevel, setZoomLevel] = useState(2.0);
 
   const handleRatingChange = (jan, rating) => {
     setUserRatings((prev) => ({ ...prev, [jan]: rating }));
@@ -167,8 +167,8 @@ function MapPage() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
-        <button onClick={() => setZoomLevel(z => Math.min(z + 0.1, 5))}>ズームイン</button>
-        <button onClick={() => setZoomLevel(z => Math.max(z - 0.1, 0.2))}>ズームアウト</button>
+        <button onClick={() => setZoomLevel(z => Math.min(z + 1.0, 5))}>+</button>
+        <button onClick={() => setZoomLevel(z => Math.max(z - 1.0, 0.2))}>-</button>
       </div>
 
       <div className="plot-container">
