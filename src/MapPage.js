@@ -12,14 +12,30 @@ function MapPage() {
   const [zoomLevel, setZoomLevel] = useState(2.0);
 
   const handleRatingChange = (jan, rating) => {
-    setUserRatings((prev) => ({ ...prev, [jan]: rating }));
-  };
+  const updated = { ...userRatings, [jan]: rating };
+  setUserRatings(updated);
+  localStorage.setItem('userRatings', JSON.stringify(updated));
+};
+
+  const loadUserRatings = () => {
+  const stored = localStorage.getItem('userRatings');
+  setUserRatings(stored ? JSON.parse(stored) : {});
+};
 
   useEffect(() => {
-    const handleResize = () => window.dispatchEvent(new Event('resize'));
-    setTimeout(handleResize, 300);
-    return () => window.removeEventListener('resize', handleResize);
+  // 初回ロード
+  loadUserRatings();
+
+  // 他タブ更新を検知
+  const handleStorage = (e) => {
+    if (e.key === 'userRatings') {
+      loadUserRatings();
+    }
+  };
+  window.addEventListener('storage', handleStorage);
+  return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
 
   useEffect(() => {
     Promise.all([
