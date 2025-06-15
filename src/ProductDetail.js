@@ -14,12 +14,12 @@ function ProductDetail() {
 
   // ⭐️ handleCloseTab を明示的に定義
   const handleCloseTab = () => {
-    if (typeof window !== "undefined" && window.close) {
-      window.close();
-    } else {
-      console.warn("window.close() is not available.");
-    }
-  };
+  if (window.history.length > 1) {
+    window.history.back();
+  } else {
+    window.location.href = '/';
+  }
+};
 
   // データ読み込みと距離計算（近いワイン抽出）
   useEffect(() => {
