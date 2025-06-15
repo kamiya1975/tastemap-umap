@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import './App.css';
+import { Link } from 'react-router-dom';
 
 function MapPage() {
   const [data, setData] = useState([]);
@@ -92,7 +93,11 @@ function MapPage() {
       const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
       return (
         <div key={jan} className="top10-item">
-          <strong>{`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}</strong>
+          <strong>
+            <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
+              {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
+            </Link>
+          </strong>
           <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
             <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>
               {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
