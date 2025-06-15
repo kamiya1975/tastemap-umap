@@ -5,10 +5,7 @@ function ProductDetail() {
   const jan = window.location.pathname.split('/').pop();
 
   const handleCloseTab = () => {
-    // 一部ブラウザでは、window.close() が機能しない場合もあるので対策文言付き
-    if (window.confirm("このタブを閉じて一覧に戻りますか？")) {
-      window.close();
-    }
+    window.close(); // ⭐️ タブを閉じるだけ（確認ダイアログなし）
   };
 
   return (
