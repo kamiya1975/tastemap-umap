@@ -1,3 +1,4 @@
+// src/ProductDetail.js
 import React, { useEffect, useState } from 'react';
 
 function ProductDetail() {
@@ -5,6 +6,10 @@ function ProductDetail() {
   const [data, setData] = useState([]);
   const [targetWine, setTargetWine] = useState(null);
   const [similarWines, setSimilarWines] = useState([]);
+  const [rating, setRating] = useState(() => {
+    const stored = localStorage.getItem('userRatings');
+    return stored ? JSON.parse(stored)[jan] || 0 : 0;
+  });
 
   const handleCloseTab = () => {
     window.close();
@@ -31,7 +36,7 @@ function ProductDetail() {
 
         if (target) {
           const distances = parsed
-            .filter(d => String(d.JAN).trim() !== String(jan).trim()) // ← 厳密な除外条件
+            .filter(d => String(d.JAN).trim() !== String(jan).trim())
             .map(d => {
               const dx = d.BodyAxis - target.BodyAxis;
               const dy = d.SweetAxis - target.SweetAxis;
@@ -45,6 +50,15 @@ function ProductDetail() {
       });
   }, [jan]);
 
+  const handleRatingChange = (e) => {
+    const newRating = parseInt(e.target.value);
+    setRating(newRating);
+    const stored = localStorage.getItem('userRatings');
+    const ratings = stored ? JSON.parse(stored) : {};
+    ratings[jan] = newRating;
+    localStorage.setItem('userRatings', JSON.stringify(ratings));
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <button onClick={handleCloseTab} style={{ marginBottom: '20px' }}>
@@ -53,6 +67,15 @@ function ProductDetail() {
       <h2>商品詳細ページ</h2>
       <p>JANコード：{jan}</p>
       <p>ここに商品名・味の特徴・香り・価格・画像などを表示していきます。</p>
+
+      <div style={{ marginTop: '20px' }}>
+        <label><strong>星評価：</strong></label>
+        <select value={rating} onChange={handleRatingChange} style={{ marginLeft: '10px' }}>
+          {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
+            <option key={idx} value={idx}>{label}</option>
+          ))}
+        </select>
+      </div>
 
       {similarWines.length > 0 && (
         <div style={{ marginTop: '30px' }}>
