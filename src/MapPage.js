@@ -14,6 +14,7 @@ function MapPage() {
   useEffect(() => {
     const handleResize = () => window.dispatchEvent(new Event('resize'));
     setTimeout(handleResize, 300);
+    setTimeout(handleResize, 800);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
@@ -122,7 +123,7 @@ function MapPage() {
 
   return (
     <div style={{ padding: '10px' }}>
-      <h2>基準のワインを飲んだ印象は？</h2>
+      <h2 style={{ textAlign: 'center' }}>基準のワインを飲んだ印象は？</h2>
 
       <div style={{ marginBottom: '20px' }}>
         <div style={{ fontWeight: 'bold', marginBottom: '5px', textAlign: 'center' }}>
@@ -138,7 +139,7 @@ function MapPage() {
         <input type="range" min="0" max="100" value={slider_pc1} style={{ width: '100%' }} onChange={(e) => setSliderPc1(Number(e.target.value))} />
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '10px' }}>
         <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.1, 10))}>＋</button>
         <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.1, 0.2))}>−</button>
       </div>
