@@ -54,37 +54,31 @@ function MapPage() {
       const pcaData = parseCSV(pcaText);
       const metaData = parseCSV(metaText);
       const metaMap = Object.fromEntries(metaData.map(d => [String(d.JAN), d]));
-      const merged = pcaData.map(d => ({
-        ...d,
-        希望小売価格: metaMap[String(d.JAN)]?.希望小売価格 || null,
-        ...metaMap[String(d.JAN)]
-      }));
+      const merged = pcaData.map(d => ({ ...d, 希望小売価格: metaMap[String(d.JAN)]?.希望小売価格 || null, ...metaMap[String(d.JAN)] }));
       setData(merged);
     });
   }, []);
 
   const blendF = data.find((d) => d.JAN === 'blendF');
-  const bodyVals = data.map(d => d.BodyAxis);
-  const sweetVals = data.map(d => d.SweetAxis);
-  const bodyMin = Math.min(...bodyVals);
-  const bodyMax = Math.max(...bodyVals);
-  const sweetMin = Math.min(...sweetVals);
-  const sweetMax = Math.max(...sweetVals);
+  const xValues = data.map((d) => d.BodyAxis);
+  const yValues = data.map((d) => d.SweetAxis);
+  const x_min = Math.min(...xValues);
+  const x_max = Math.max(...xValues);
+  const y_min = Math.min(...yValues);
+  const y_max = Math.max(...yValues);
 
-  // ✅ 修正：blendF中心の左右上下の最大距離を基準に
-  const leftRange = blendF ? blendF.BodyAxis - bodyMin : 0;
-  const rightRange = blendF ? bodyMax - blendF.BodyAxis : 0;
-  const downRange = blendF ? blendF.SweetAxis - sweetMin : 0;
-  const upRange = blendF ? sweetMax - blendF.SweetAxis : 0;
+  const leftRange = blendF ? blendF.BodyAxis - x_min : 0;
+  const rightRange = blendF ? x_max - blendF.BodyAxis : 0;
+  const downRange = blendF ? blendF.SweetAxis - y_min : 0;
+  const upRange = blendF ? y_max - blendF.SweetAxis : 0;
+
+  const bodyRange = Math.max(leftRange, rightRange);
+  const sweetRange = Math.max(upRange, downRange);
 
   const target = useMemo(() => ({
-    x: blendF
-      ? blendF.BodyAxis + ((slider_pc1 - 50) / 50) * (slider_pc1 >= 50 ? rightRange : -leftRange)
-      : 0,
-    y: blendF
-      ? blendF.SweetAxis + ((slider_pc2 - 50) / 50) * (slider_pc2 >= 50 ? upRange : -downRange)
-      : 0
-  }), [blendF, slider_pc1, slider_pc2, leftRange, rightRange, downRange, upRange]);
+    x: blendF ? blendF.BodyAxis + ((slider_pc1 - 50) / 50) * bodyRange : 0,
+    y: blendF ? blendF.SweetAxis + ((slider_pc2 - 50) / 50) * sweetRange : 0
+  }), [blendF, slider_pc1, slider_pc2, bodyRange, sweetRange]);
 
   const distances = useMemo(() => {
     if (!blendF) return [];
@@ -98,100 +92,76 @@ function MapPage() {
       .slice(0, 10);
   }, [data, target, blendF]);
 
-  const zoomFactor = 1 / zoomLevel;
-  const x_range = blendF ? [
-    blendF.BodyAxis - Math.max(leftRange, rightRange) * zoomFactor,
-    blendF.BodyAxis + Math.max(leftRange, rightRange) * zoomFactor
-  ] : [bodyMin, bodyMax];
-
-  const y_range = blendF ? [
-    blendF.SweetAxis - Math.max(downRange, upRange) * zoomFactor,
-    blendF.SweetAxis + Math.max(downRange, upRange) * zoomFactor
-  ] : [sweetMin, sweetMax];
-
   const typeColor = { Spa: 'blue', White: 'gold', Red: 'red', Rose: 'pink' };
   const typeList = ['Spa', 'White', 'Red', 'Rose'];
+
+  const top10List = useMemo(() => (
+    distances.map((item, index) => {
+      const jan = item.JAN;
+      const currentRating = userRatings[jan] || 0;
+      const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
+      return (
+        <div key={jan} className="top10-item">
+          <strong>
+            <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
+              {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
+            </Link>
+          </strong>
+          <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
+            <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>
+              {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
+                <option key={idx} value={idx}>{label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      );
+    })
+  ), [distances, userRatings]);
+
+  const zoomFactor = 1 / zoomLevel;
+  const x_range = blendF ? [blendF.BodyAxis - bodyRange * zoomFactor, blendF.BodyAxis + bodyRange * zoomFactor] : [x_min, x_max];
+  const y_range = blendF ? [blendF.SweetAxis - sweetRange * zoomFactor, blendF.SweetAxis + sweetRange * zoomFactor] : [y_min, y_max];
 
   const plotData = [
     ...typeList.map(type => ({
       x: data.filter(d => d.Type === type).map(d => d.BodyAxis),
       y: data.filter(d => d.Type === type).map(d => d.SweetAxis),
-      text: data.filter(d => d.Type === type).map(d => d["商品名"]),
+      text: data.filter(d => d.Type === type).map(d => `${d["商品名"]}`),
       hoverinfo: 'text+name',
       mode: 'markers',
       type: 'scatter',
       marker: { size: 5, color: typeColor[type] },
       name: type,
     })),
-    ...Object.entries(userRatings)
-      .filter(([jan, rating]) => rating > 0)
-      .map(([jan, rating]) => {
-        const wine = data.find((d) => String(d.JAN).trim() === String(jan).trim());
-        if (!wine) return null;
-        return {
-          x: [wine.BodyAxis],
-          y: [wine.SweetAxis],
-          text: [""],
-          mode: 'markers+text',
-          type: 'scatter',
-          marker: {
-            size: rating * 6 + 8,
-            color: 'orange',
-            opacity: 0.8,
-            line: { color: 'green', width: 1.5 }
-          },
-          textposition: 'bottom center',
-          name: '評価バブル',
-          showlegend: false,
-          hoverinfo: 'skip'
-        };
-      }).filter(Boolean),
-    {
-      x: [target.x], y: [target.y],
-      mode: 'markers',
-      type: 'scatter',
-      marker: { size: 20, color: 'green', symbol: 'x' },
-      name: 'あなたの好み', hoverinfo: 'skip'
-    },
-    {
-      x: distances.map(d => d.BodyAxis),
-      y: distances.map(d => d.SweetAxis),
-      text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`),
-      mode: 'markers+text',
-      type: 'scatter',
-      marker: { size: 10, color: 'white' },
-      textfont: { color: 'black', size: 12 },
-      textposition: 'middle center',
-      name: 'TOP10', showlegend: false
-    }
+    ...Object.entries(userRatings).filter(([jan, rating]) => rating > 0).map(([jan, rating]) => {
+      const wine = data.find(d => String(d.JAN).trim() === String(jan).trim());
+      if (!wine) return null;
+      return {
+        x: [wine.BodyAxis],
+        y: [wine.SweetAxis],
+        text: [""],
+        mode: 'markers+text',
+        type: 'scatter',
+        marker: {
+          size: rating * 6 + 8,
+          color: 'orange',
+          opacity: 0.8,
+          line: { color: 'green', width: 1.5 }
+        },
+        textposition: 'bottom center',
+        name: '評価バブル',
+        showlegend: false,
+        hoverinfo: 'skip'
+      };
+    }).filter(Boolean),
+    { x: [target.x], y: [target.y], mode: 'markers', type: 'scatter', marker: { size: 20, color: 'green', symbol: 'x' }, name: 'あなたの好み', hoverinfo: 'skip' },
+    { x: distances.map(d => d.BodyAxis), y: distances.map(d => d.SweetAxis), text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`), mode: 'markers+text', type: 'scatter', marker: { size: 10, color: 'white' }, textfont: { color: 'black', size: 12 }, textposition: 'middle center', name: 'TOP10', showlegend: false, hoverinfo: 'text' },
   ];
-
-  const top10List = distances.map((item, index) => {
-    const jan = item.JAN;
-    const currentRating = userRatings[jan] || 0;
-    const price = item.希望小売価格 != null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
-    return (
-      <div key={jan} className="top10-item">
-        <strong>
-          <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
-            {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
-          </Link>
-        </strong>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
-          <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>
-            {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
-              <option key={idx} value={idx}>{label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-    );
-  });
 
   return (
     <div style={{ padding: '10px' }}>
       <h2>基準のワインを飲んだ印象は？</h2>
-
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
           <span>← こんなに甘みは不要</span>
@@ -215,45 +185,25 @@ function MapPage() {
 
       <div className="plot-container">
         <Plot
-          useResizeHandler
+          useResizeHandler={true}
           style={{ width: 'calc(100vw - 20px)', height: '100%' }}
           data={plotData}
           layout={{
             margin: { l: 30, r: 30, t: 30, b: 30 },
             dragmode: 'pan',
             xaxis: {
-              range: x_range,
-              showticklabels: false,
-              showgrid: true,
-              gridcolor: 'lightgray',
-              gridwidth: 1,
-              zeroline: false,
-              showline: true,
-              mirror: true,
-              linecolor: 'black',
-              linewidth: 2,
-              scaleanchor: 'y'
+              range: x_range, showticklabels: false, showgrid: true,
+              gridcolor: 'lightgray', gridwidth: 1,
+              zeroline: false, showline: true, mirror: true,
+              linecolor: 'black', linewidth: 2, scaleanchor: 'y'
             },
             yaxis: {
-              range: y_range,
-              showticklabels: false,
-              showgrid: true,
-              gridcolor: 'lightgray',
-              gridwidth: 1,
-              zeroline: false,
-              showline: true,
-              mirror: true,
-              linecolor: 'black',
-              linewidth: 2,
-              scaleratio: 1
+              range: y_range, showticklabels: false, showgrid: true,
+              gridcolor: 'lightgray', gridwidth: 1,
+              zeroline: false, showline: true, mirror: true,
+              linecolor: 'black', linewidth: 2, scaleratio: 1
             },
-            legend: {
-              orientation: 'h',
-              x: 0.5,
-              y: -0.25,
-              xanchor: 'center',
-              yanchor: 'top'
-            }
+            legend: { orientation: 'h', x: 0.5, y: -0.25, xanchor: 'center', yanchor: 'top' }
           }}
           config={{ responsive: true, scrollZoom: true, displayModeBar: false }}
         />
