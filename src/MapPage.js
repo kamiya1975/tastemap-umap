@@ -9,6 +9,7 @@ function MapPage() {
   const [slider_pc1, setSliderPc1] = useState(50);
   const [slider_pc2, setSliderPc2] = useState(50);
   const [userRatings, setUserRatings] = useState({});
+  const [zoomLevel, setZoomLevel] = useState(1.0);
 
   const handleRatingChange = (jan, rating) => {
     setUserRatings((prev) => ({ ...prev, [jan]: rating }));
@@ -110,14 +111,15 @@ function MapPage() {
     })
   ), [distances, userRatings]);
 
+  const zoomFactor = 1 / zoomLevel;
   const x_range = blendF ? [
-    blendF.BodyAxis - Math.max(range_left_x, range_right_x),
-    blendF.BodyAxis + Math.max(range_left_x, range_right_x)
+    blendF.BodyAxis - Math.max(range_left_x, range_right_x) * zoomFactor,
+    blendF.BodyAxis + Math.max(range_left_x, range_right_x) * zoomFactor
   ] : [x_min, x_max];
 
   const y_range = blendF ? [
-    blendF.SweetAxis - Math.max(range_down_y, range_up_y),
-    blendF.SweetAxis + Math.max(range_down_y, range_up_y)
+    blendF.SweetAxis - Math.max(range_down_y, range_up_y) * zoomFactor,
+    blendF.SweetAxis + Math.max(range_down_y, range_up_y) * zoomFactor
   ] : [y_min, y_max];
 
   const plotData = [
@@ -126,10 +128,8 @@ function MapPage() {
       y: data.filter(d => d.Type === type).map(d => d.SweetAxis),
       text: data.filter(d => d.Type === type).map(d => `${d["商品名"]}`),
       hoverinfo: 'text+name',
-      mode: 'markers',
-      type: 'scatter',
-      marker: { size: 5, color: typeColor[type] },
-      name: type,
+      mode: 'markers', type: 'scatter',
+      marker: { size: 5, color: typeColor[type] }, name: type,
     })),
     ...Object.entries(userRatings).filter(([jan, rating]) => rating > 0).map(([jan, rating]) => {
       const wine = data.find(d => String(d.JAN).trim() === String(jan).trim());
@@ -146,23 +146,8 @@ function MapPage() {
         hoverinfo: 'skip',
       };
     }).filter(Boolean),
-    {
-      x: [target.x], y: [target.y],
-      mode: 'markers', type: 'scatter',
-      marker: { size: 20, color: 'green', symbol: 'x' },
-      name: 'あなたの好み', hoverinfo: 'skip',
-    },
-    {
-      x: distances.map(d => d.BodyAxis),
-      y: distances.map(d => d.SweetAxis),
-      text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`),
-      mode: 'markers+text', type: 'scatter',
-      marker: { size: 10, color: 'white' },
-      textfont: { color: 'black', size: 12 },
-      textposition: 'middle center',
-      name: 'TOP10', showlegend: false,
-      hoverinfo: 'text',
-    },
+    { x: [target.x], y: [target.y], mode: 'markers', type: 'scatter', marker: { size: 20, color: 'green', symbol: 'x' }, name: 'あなたの好み', hoverinfo: 'skip' },
+    { x: distances.map(d => d.BodyAxis), y: distances.map(d => d.SweetAxis), text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`), mode: 'markers+text', type: 'scatter', marker: { size: 10, color: 'white' }, textfont: { color: 'black', size: 12 }, textposition: 'middle center', name: 'TOP10', showlegend: false, hoverinfo: 'text' },
   ];
 
   return (
@@ -174,9 +159,7 @@ function MapPage() {
           <span>← こんなに甘みは不要</span>
           <span>もっと甘みが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc2} 
-          style={{ width: '100%' }}
-          onChange={(e) => setSliderPc2(Number(e.target.value))} />
+        <input type="range" min="0" max="100" value={slider_pc2} style={{ width: '100%' }} onChange={(e) => setSliderPc2(Number(e.target.value))} />
       </div>
 
       <div style={{ marginBottom: '20px' }}>
@@ -184,14 +167,12 @@ function MapPage() {
           <span>← もっと軽やかが良い</span>
           <span>濃厚なコクが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc1} 
-          style={{ width: '100%' }}
-          onChange={(e) => setSliderPc1(Number(e.target.value))} />
+        <input type="range" min="0" max="100" value={slider_pc1} style={{ width: '100%' }} onChange={(e) => setSliderPc1(Number(e.target.value))} />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
-        <button onClick={() => setSliderPc1(prev => Math.min(prev + 1, 100))}>＋</button>
-        <button onClick={() => setSliderPc1(prev => Math.max(prev - 1, 0))}>−</button>
+        <button onClick={() => setZoomLevel((z) => Math.min(z + 0.1, 5))}>ズームイン</button>
+        <button onClick={() => setZoomLevel((z) => Math.max(z - 0.1, 0.2))}>ズームアウト</button>
       </div>
 
       <div className="plot-container">
