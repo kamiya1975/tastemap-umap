@@ -12,6 +12,15 @@ function ProductDetail() {
     return stored ? JSON.parse(stored)[jan] || 0 : 0;
   });
 
+  // ⭐️ handleCloseTab を明示的に定義
+  const handleCloseTab = () => {
+    if (typeof window !== "undefined" && window.close) {
+      window.close();
+    } else {
+      console.warn("window.close() is not available.");
+    }
+  };
+
   // データ読み込みと距離計算（近いワイン抽出）
   useEffect(() => {
     fetch('/pca_result.csv')
@@ -34,7 +43,7 @@ function ProductDetail() {
 
         if (target) {
           const distances = parsed
-            .filter(d => String(d.JAN).trim() !== String(jan).trim()) // 自分を除く
+            .filter(d => String(d.JAN).trim() !== String(jan).trim())
             .map(d => {
               const dx = d.BodyAxis - target.BodyAxis;
               const dy = d.SweetAxis - target.SweetAxis;
