@@ -6,8 +6,9 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<MapPage />} />
+        {/* この順番が重要！ */}
         <Route path="/products/:jan" element={<ProductDetail />} />
+        <Route path="/" element={<MapPage />} />
       </Routes>
     </Router>
   );
