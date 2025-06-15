@@ -1,8 +1,8 @@
 // src/MapPage.js
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Plot from 'react-plotly.js';
 import './App.css';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 function MapPage() {
   const [data, setData] = useState([]);
@@ -10,6 +10,8 @@ function MapPage() {
   const [slider_pc2, setSliderPc2] = useState(50);
   const [userRatings, setUserRatings] = useState({});
   const [zoomLevel, setZoomLevel] = useState(2.0);
+  const location = useLocation();
+  const itemRefs = useRef({});
 
   const handleRatingChange = (jan, rating) => {
     setUserRatings((prev) => ({ ...prev, [jan]: rating }));
@@ -71,7 +73,7 @@ function MapPage() {
         ? blendF.SweetAxis - ((50 - slider_pc2) / 50) * range_down_y
         : blendF.SweetAxis + ((slider_pc2 - 50) / 50) * range_up_y
       : 0,
-  }), [blendF, slider_pc1, slider_pc2, range_left_x, range_right_x, range_down_y, range_up_y]);
+  }), [blendF, slider_pc1, slider_pc2]);
 
   const distances = useMemo(() => {
     if (!blendF) return [];
@@ -88,15 +90,27 @@ function MapPage() {
   const typeColor = { Spa: 'blue', White: 'gold', Red: 'red', Rose: 'pink' };
   const typeList = ['Spa', 'White', 'Red', 'Rose'];
 
+  useEffect(() => {
+    const fromId = location.state?.from;
+    if (fromId && itemRefs.current[fromId]) {
+      setTimeout(() => itemRefs.current[fromId].scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+    }
+  }, [location]);
+
   const top10List = useMemo(() => (
     distances.map((item, index) => {
       const jan = item.JAN;
       const currentRating = userRatings[jan] || 0;
       const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
+      const rankSymbol = '❶❷❸❹❺❻❼❽❾❿'[index] || `${index + 1}`;
       return (
-        <div key={jan} className="top10-item">
+        <div
+          key={jan}
+          ref={(el) => itemRefs.current[rankSymbol] = el}
+          className="top10-item"
+        >
           <strong>
-            <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
+            <Link to={`/products/${jan}`} state={{ from: rankSymbol }} style={{ textDecoration: 'none', color: 'black' }}>
               {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
             </Link>
           </strong>
@@ -128,8 +142,7 @@ function MapPage() {
       x: data.filter(d => d.Type === type).map(d => d.BodyAxis),
       y: data.filter(d => d.Type === type).map(d => d.SweetAxis),
       text: data.filter(d => d.Type === type).map(d => `${d["商品名"]}`),
-      hoverinfo: 'text+name',
-      mode: 'markers', type: 'scatter',
+      hoverinfo: 'text+name', mode: 'markers', type: 'scatter',
       marker: { size: 5, color: typeColor[type] }, name: type,
     })),
     ...Object.entries(userRatings).filter(([jan, rating]) => rating > 0).map(([jan, rating]) => {
