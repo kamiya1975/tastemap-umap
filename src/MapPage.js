@@ -110,7 +110,9 @@ function MapPage() {
           className="top10-item"
         >
           <strong>
-            <Link to={`/products/${jan}`} state={{ from: rankSymbol }} style={{ textDecoration: 'none', color: 'black' }}>
+            <Link to={`/products/${jan}`} 
+            target="_blank"
+            state={{ from: rankSymbol }} style={{ textDecoration: 'none', color: 'black' }}>
               {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
             </Link>
           </strong>
