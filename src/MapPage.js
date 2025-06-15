@@ -1,6 +1,7 @@
 // src/MapPage.js
 import React, { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
+import { Link } from 'react-router-dom';
 
 function MapPage() {
   const [data, setData] = useState([]);
@@ -90,19 +91,13 @@ function MapPage() {
     const jan = item.JAN;
     const currentRating = userRatings[jan] || 0;
     const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
-    const detailUrl = `https://yourdomain.com/products/${jan}`;
 
     return (
       <div key={jan} className="top10-item">
         <strong>
-          <a
-            href={detailUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ textDecoration: 'none', color: 'black' }}
-          >
+          <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
             {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
-          </a>
+          </Link>
         </strong>
         <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
           <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>

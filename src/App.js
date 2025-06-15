@@ -1,13 +1,15 @@
-// src/App.js
-import React from 'react';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import MapPage from './MapPage';
+import ProductDetail from './ProductDetail';
 
 function App() {
   return (
-    <div className="App">
-      <MapPage />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<MapPage />} />
+        <Route path="/products/:jan" element={<ProductDetail />} />
+      </Routes>
+    </Router>
   );
 }
 
