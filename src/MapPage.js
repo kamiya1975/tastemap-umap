@@ -11,19 +11,6 @@ function MapPage() {
   const [userRatings, setUserRatings] = useState({});
   const [zoomLevel, setZoomLevel] = useState(2.0);
 
-  const handleRatingChange = (jan, rating) => {
-    const updated = { ...userRatings, [jan]: rating };
-    setUserRatings(updated);
-    localStorage.setItem('userRatings', JSON.stringify(updated));
-  };
-
-  const handleRatingDelete = (jan) => {
-    const updated = { ...userRatings };
-    delete updated[jan];
-    setUserRatings(updated);
-    localStorage.setItem('userRatings', JSON.stringify(updated));
-  };
-
   const loadUserRatings = () => {
     const stored = localStorage.getItem('userRatings');
     setUserRatings(stored ? JSON.parse(stored) : {});
@@ -104,7 +91,6 @@ function MapPage() {
   const top10List = useMemo(() => (
     distances.map((item, index) => {
       const jan = item.JAN;
-      const currentRating = userRatings[jan] || 0;
       const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
       return (
         <div key={jan} className="top10-item">
@@ -113,22 +99,10 @@ function MapPage() {
               {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
             </Link>
           </strong>
-          <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '10px' }}>
-            <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>
-              {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
-                <option key={idx} value={idx}>{label}</option>
-              ))}
-            </select>
-            {currentRating > 0 && (
-              <button onClick={() => handleRatingDelete(jan)} style={{ fontSize: '0.8rem' }}>
-                削除
-              </button>
-            )}
-          </div>
         </div>
       );
     })
-  ), [distances, userRatings]);
+  ), [distances]);
 
   const zoomFactor = 1 / zoomLevel;
   const x_range = blendF ? [
