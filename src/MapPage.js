@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import './App.css';
-import wineData from './wineData.json';
 
 function MapPage() {
   const [data, setData] = useState([]);
@@ -11,22 +10,42 @@ function MapPage() {
   const [userRatings, setUserRatings] = useState({});
 
   useEffect(() => {
-    setData(wineData);
+    const handleResize = () => window.dispatchEvent(new Event('resize'));
+    setTimeout(handleResize, 300);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   useEffect(() => {
-    setTimeout(() => {
-      window.dispatchEvent(new Event('resize'));
-    }, 300);
+    Promise.all([
+      fetch('/pca_result.csv').then(res => res.text()),
+      fetch('/Merged_TasteDataDB15.csv').then(res => res.text())
+    ]).then(([pcaText, metaText]) => {
+      const parseCSV = (csvText) => {
+        const rows = csvText.trim().split('\n');
+        const headers = rows[0].split(',');
+        return rows.slice(1).map(row => {
+          const values = row.split(',');
+          const entry = {};
+          headers.forEach((h, i) => {
+            entry[h] = isNaN(values[i]) ? values[i] : parseFloat(values[i]);
+          });
+          return entry;
+        });
+      };
+
+      const pcaData = parseCSV(pcaText);
+      const metaData = parseCSV(metaText);
+      const metaMap = Object.fromEntries(metaData.map(d => [String(d.JAN), d]));
+      const merged = pcaData.map(d => ({ ...d, ...metaMap[String(d.JAN)] }));
+      setData(merged);
+    });
   }, []);
 
   const distances = useMemo(() => {
-    const x = slider_pc1;
-    const y = slider_pc2;
     return data
       .map((d) => {
-        const dx = x - d.BodyAxis;
-        const dy = y - d.SweetAxis;
+        const dx = slider_pc1 - d.BodyAxis;
+        const dy = slider_pc2 - d.SweetAxis;
         return {
           ...d,
           distance: Math.sqrt(dx * dx + dy * dy),
@@ -43,14 +62,14 @@ function MapPage() {
   const top10List = useMemo(() => (
     distances.map((item, index) => (
       <div key={item.JAN} className="top10-item">
-        <strong>❶❷❸❹❺❻❼❽❾❿"[index]".charAt(0) + ' ' + item['商品名']}</strong>
-        <div>{item['生産者名']}（{item['生産国']}）</div>
-        <div>価格: ¥{item['価格']}</div>
+        <strong>{`${index + 1}. ${item['商品名']} (${item.Type || ''})`}</strong>
+        <div>{item['生産者名'] || ''}（{item['生産国'] || ''}）</div>
+        <div>価格: {item['希望小売価格'] ? `¥${parseInt(item['希望小売価格']).toLocaleString()}` : '不明'}</div>
         <select
           value={userRatings[item.JAN] || ''}
           onChange={(e) => handleRatingChange(item.JAN, parseInt(e.target.value))}
         >
-          <option value="">評価を選択</option>
+          <option value="">未評価</option>
           {[1, 2, 3, 4, 5].map((v) => (
             <option key={v} value={v}>{'⭐️'.repeat(v)}</option>
           ))}
