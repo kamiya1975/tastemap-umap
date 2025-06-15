@@ -11,19 +11,31 @@ function MapPage() {
   const [userRatings, setUserRatings] = useState({});
   const [zoomLevel, setZoomLevel] = useState(2.0);
 
+  const handleRatingChange = (jan, rating) => {
+  const updated = { ...userRatings, [jan]: rating };
+  setUserRatings(updated);
+  localStorage.setItem('userRatings', JSON.stringify(updated));
+};
+
   const loadUserRatings = () => {
-    const stored = localStorage.getItem('userRatings');
-    setUserRatings(stored ? JSON.parse(stored) : {});
-  };
+  const stored = localStorage.getItem('userRatings');
+  setUserRatings(stored ? JSON.parse(stored) : {});
+};
 
   useEffect(() => {
-    loadUserRatings();
-    const handleStorage = (e) => {
-      if (e.key === 'userRatings') loadUserRatings();
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+  // 初回ロード
+  loadUserRatings();
+
+  // 他タブ更新を検知
+  const handleStorage = (e) => {
+    if (e.key === 'userRatings') {
+      loadUserRatings();
+    }
+  };
+  window.addEventListener('storage', handleStorage);
+  return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
 
   useEffect(() => {
     Promise.all([
@@ -46,11 +58,7 @@ function MapPage() {
       const pcaData = parseCSV(pcaText);
       const metaData = parseCSV(metaText);
       const metaMap = Object.fromEntries(metaData.map(d => [String(d.JAN), d]));
-      const merged = pcaData.map(d => ({
-        ...d,
-        希望小売価格: metaMap[String(d.JAN)]?.希望小売価格 || null,
-        ...metaMap[String(d.JAN)]
-      }));
+      const merged = pcaData.map(d => ({ ...d, 希望小売価格: metaMap[String(d.JAN)]?.希望小売価格 || null, ...metaMap[String(d.JAN)] }));
       setData(merged);
     });
   }, []);
@@ -69,8 +77,16 @@ function MapPage() {
   const range_up_y = blendF ? y_max - blendF.SweetAxis : 0;
 
   const target = useMemo(() => ({
-    x: blendF ? blendF.BodyAxis + ((slider_pc1 - 50) / 50) * (slider_pc1 <= 50 ? -range_left_x : range_right_x) : 0,
-    y: blendF ? blendF.SweetAxis + ((slider_pc2 - 50) / 50) * (slider_pc2 <= 50 ? -range_down_y : range_up_y) : 0
+    x: blendF
+      ? slider_pc1 <= 50
+        ? blendF.BodyAxis - ((50 - slider_pc1) / 50) * range_left_x
+        : blendF.BodyAxis + ((slider_pc1 - 50) / 50) * range_right_x
+      : 0,
+    y: blendF
+      ? slider_pc2 <= 50
+        ? blendF.SweetAxis - ((50 - slider_pc2) / 50) * range_down_y
+        : blendF.SweetAxis + ((slider_pc2 - 50) / 50) * range_up_y
+      : 0,
   }), [blendF, slider_pc1, slider_pc2, range_left_x, range_right_x, range_down_y, range_up_y]);
 
   const distances = useMemo(() => {
@@ -91,18 +107,26 @@ function MapPage() {
   const top10List = useMemo(() => (
     distances.map((item, index) => {
       const jan = item.JAN;
-      const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
+      const currentRating = userRatings[jan] || 0;
+      const price = item.希望小売価格 !== null ? ${parseInt(item.希望小売価格).toLocaleString()} 円 : "価格未設定";
       return (
         <div key={jan} className="top10-item">
           <strong>
-            <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
-              {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
+            <Link to={/products/${jan}} style={{ textDecoration: 'none', color: 'black' }}>
+              {${index + 1}. ${item['商品名']} (${item.Type}) ${price}}
             </Link>
           </strong>
+          <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
+            <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>
+              {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
+                <option key={idx} value={idx}>{label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       );
     })
-  ), [distances]);
+  ), [distances, userRatings]);
 
   const zoomFactor = 1 / zoomLevel;
   const x_range = blendF ? [
@@ -119,7 +143,7 @@ function MapPage() {
     ...typeList.map(type => ({
       x: data.filter(d => d.Type === type).map(d => d.BodyAxis),
       y: data.filter(d => d.Type === type).map(d => d.SweetAxis),
-      text: data.filter(d => d.Type === type).map(d => `${d["商品名"]}`),
+      text: data.filter(d => d.Type === type).map(d => ${d["商品名"]}),
       hoverinfo: 'text+name',
       mode: 'markers', type: 'scatter',
       marker: { size: 5, color: typeColor[type] }, name: type,
@@ -135,7 +159,7 @@ function MapPage() {
       };
     }).filter(Boolean),
     { x: [target.x], y: [target.y], mode: 'markers', type: 'scatter', marker: { size: 20, color: 'green', symbol: 'x' }, name: 'あなたの好み', hoverinfo: 'skip' },
-    { x: distances.map(d => d.BodyAxis), y: distances.map(d => d.SweetAxis), text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`), mode: 'markers+text', type: 'scatter', marker: { size: 10, color: 'white' }, textfont: { color: 'black', size: 12 }, textposition: 'middle center', name: 'TOP10', showlegend: false, hoverinfo: 'text' },
+    { x: distances.map(d => d.BodyAxis), y: distances.map(d => d.SweetAxis), text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || ${i + 1}), mode: 'markers+text', type: 'scatter', marker: { size: 10, color: 'white' }, textfont: { color: 'black', size: 12 }, textposition: 'middle center', name: 'TOP10', showlegend: false, hoverinfo: 'text' },
   ];
 
   return (
