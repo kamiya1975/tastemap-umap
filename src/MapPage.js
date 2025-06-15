@@ -25,9 +25,7 @@ function MapPage() {
   useEffect(() => {
     loadUserRatings();
     const handleStorage = (e) => {
-      if (e.key === 'userRatings') {
-        loadUserRatings();
-      }
+      if (e.key === 'userRatings') loadUserRatings();
     };
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
@@ -54,7 +52,11 @@ function MapPage() {
       const pcaData = parseCSV(pcaText);
       const metaData = parseCSV(metaText);
       const metaMap = Object.fromEntries(metaData.map(d => [String(d.JAN), d]));
-      const merged = pcaData.map(d => ({ ...d, 希望小売価格: metaMap[String(d.JAN)]?.希望小売価格 || null, ...metaMap[String(d.JAN)] }));
+      const merged = pcaData.map(d => ({
+        ...d,
+        希望小売価格: metaMap[String(d.JAN)]?.希望小売価格 || null,
+        ...metaMap[String(d.JAN)]
+      }));
       setData(merged);
     });
   }, []);
@@ -67,27 +69,13 @@ function MapPage() {
   const y_min = Math.min(...yValues);
   const y_max = Math.max(...yValues);
 
-  const leftRange = blendF ? blendF.BodyAxis - x_min : 0;
-  const rightRange = blendF ? x_max - blendF.BodyAxis : 0;
-  const downRange = blendF ? blendF.SweetAxis - y_min : 0;
-  const upRange = blendF ? y_max - blendF.SweetAxis : 0;
-
-  const bodyRange = Math.max(leftRange, rightRange);
-  const sweetRange = Math.max(upRange, downRange);
-
-  useEffect(() => {
-    if (blendF) {
-      const pc1 = ((blendF.BodyAxis - x_min) / (x_max - x_min)) * 100;
-      const pc2 = ((blendF.SweetAxis - y_min) / (y_max - y_min)) * 100;
-      setSliderPc1(pc1);
-      setSliderPc2(pc2);
-    }
-  }, [blendF, x_min, x_max, y_min, y_max]);
+  const bodyRange = Math.max(blendF ? blendF.BodyAxis - x_min : 0, blendF ? x_max - blendF.BodyAxis : 0);
+  const sweetRange = Math.max(blendF ? blendF.SweetAxis - y_min : 0, blendF ? y_max - blendF.SweetAxis : 0);
 
   const target = useMemo(() => ({
-    x: x_min + (slider_pc1 / 100) * (x_max - x_min),
-    y: y_min + (slider_pc2 / 100) * (y_max - y_min),
-  }), [slider_pc1, slider_pc2, x_min, x_max, y_min, y_max]);
+    x: blendF ? blendF.BodyAxis + ((slider_pc1 - 50) / 50) * bodyRange : 0,
+    y: blendF ? blendF.SweetAxis + ((slider_pc2 - 50) / 50) * sweetRange : 0
+  }), [slider_pc1, slider_pc2, blendF, bodyRange, sweetRange]);
 
   const distances = useMemo(() => {
     if (!blendF) return [];
@@ -171,6 +159,7 @@ function MapPage() {
   return (
     <div style={{ padding: '10px' }}>
       <h2>基準のワインを飲んだ印象は？</h2>
+
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
           <span>← こんなに甘みは不要</span>
@@ -201,16 +190,30 @@ function MapPage() {
             margin: { l: 30, r: 30, t: 30, b: 30 },
             dragmode: 'pan',
             xaxis: {
-              range: x_range, showticklabels: false, showgrid: true,
-              gridcolor: 'lightgray', gridwidth: 1,
-              zeroline: false, showline: true, mirror: true,
-              linecolor: 'black', linewidth: 2, scaleanchor: 'y'
+              range: x_range,
+              showticklabels: false,
+              showgrid: true,
+              gridcolor: 'lightgray',
+              gridwidth: 1,
+              zeroline: false,
+              showline: true,
+              mirror: true,
+              linecolor: 'black',
+              linewidth: 2,
+              scaleanchor: 'y'
             },
             yaxis: {
-              range: y_range, showticklabels: false, showgrid: true,
-              gridcolor: 'lightgray', gridwidth: 1,
-              zeroline: false, showline: true, mirror: true,
-              linecolor: 'black', linewidth: 2, scaleratio: 1
+              range: y_range,
+              showticklabels: false,
+              showgrid: true,
+              gridcolor: 'lightgray',
+              gridwidth: 1,
+              zeroline: false,
+              showline: true,
+              mirror: true,
+              linecolor: 'black',
+              linewidth: 2,
+              scaleratio: 1
             },
             legend: { orientation: 'h', x: 0.5, y: -0.25, xanchor: 'center', yanchor: 'top' }
           }}
