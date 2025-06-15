@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import './App.css';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 
 function MapPage() {
   const [data, setData] = useState([]);
@@ -10,7 +10,6 @@ function MapPage() {
   const [slider_pc2, setSliderPc2] = useState(50);
   const [userRatings, setUserRatings] = useState({});
   const [zoomLevel, setZoomLevel] = useState(1.0);
-  const location = useLocation();
 
   const handleRatingChange = (jan, rating) => {
     setUserRatings((prev) => ({ ...prev, [jan]: rating }));
@@ -48,20 +47,6 @@ function MapPage() {
     });
   }, []);
 
-  useEffect(() => {
-    setTimeout(() => {
-      const fromId = location.state?.from;
-      if (fromId) {
-        const target = document.getElementById(fromId);
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }
-    }, 300);
-  }, [location]);
-
-  if (data.length === 0) return <div>読み込み中…</div>;
-
   const blendF = data.find((d) => d.JAN === 'blendF');
   const xValues = data.map((d) => d.BodyAxis);
   const yValues = data.map((d) => d.SweetAxis);
@@ -75,7 +60,7 @@ function MapPage() {
   const range_down_y = blendF ? blendF.SweetAxis - y_min : 0;
   const range_up_y = blendF ? y_max - blendF.SweetAxis : 0;
 
-  const target = {
+  const target = useMemo(() => ({
     x: blendF
       ? slider_pc1 <= 50
         ? blendF.BodyAxis - ((50 - slider_pc1) / 50) * range_left_x
@@ -86,9 +71,10 @@ function MapPage() {
         ? blendF.SweetAxis - ((50 - slider_pc2) / 50) * range_down_y
         : blendF.SweetAxis + ((slider_pc2 - 50) / 50) * range_up_y
       : 0,
-  };
+  }), [blendF, slider_pc1, slider_pc2, range_left_x, range_right_x, range_down_y, range_up_y]);
 
   const distances = useMemo(() => {
+    if (!blendF) return [];
     return data.filter(d => d.JAN !== 'blendF')
       .map(d => {
         const dx = d.BodyAxis - target.x;
@@ -97,7 +83,7 @@ function MapPage() {
       })
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 10);
-  }, [data, target]);
+  }, [data, target, blendF]);
 
   const typeColor = { Spa: 'blue', White: 'gold', Red: 'red', Rose: 'pink' };
   const typeList = ['Spa', 'White', 'Red', 'Rose'];
@@ -108,9 +94,9 @@ function MapPage() {
       const currentRating = userRatings[jan] || 0;
       const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
       return (
-        <div key={jan} id={`rank-${index + 1}`} className="top10-item">
+        <div key={jan} className="top10-item">
           <strong>
-            <Link to={`/products/${jan}`} state={{ from: `rank-${index + 1}` }} style={{ textDecoration: 'none', color: 'black' }}>
+            <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
               {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
             </Link>
           </strong>
@@ -150,15 +136,10 @@ function MapPage() {
       const wine = data.find(d => String(d.JAN).trim() === String(jan).trim());
       if (!wine) return null;
       return {
-        x: [wine.BodyAxis], y: [wine.SweetAxis],
-        text: [""],
+        x: [wine.BodyAxis], y: [wine.SweetAxis], text: [""],
         mode: 'markers+text', type: 'scatter',
-        marker: {
-          size: rating * 6 + 8, color: 'orange', opacity: 0.8,
-          line: { color: 'green', width: 1.5 },
-        },
-        textposition: 'bottom center', name: '評価バブル', showlegend: false,
-        hoverinfo: 'skip',
+        marker: { size: rating * 6 + 8, color: 'orange', opacity: 0.8, line: { color: 'green', width: 1.5 } },
+        textposition: 'bottom center', name: '評価バブル', showlegend: false, hoverinfo: 'skip'
       };
     }).filter(Boolean),
     { x: [target.x], y: [target.y], mode: 'markers', type: 'scatter', marker: { size: 20, color: 'green', symbol: 'x' }, name: 'あなたの好み', hoverinfo: 'skip' },
@@ -186,8 +167,8 @@ function MapPage() {
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
-        <button onClick={() => setZoomLevel((z) => Math.min(z + 0.1, 5))}>ズームイン</button>
-        <button onClick={() => setZoomLevel((z) => Math.max(z - 0.1, 0.2))}>ズームアウト</button>
+        <button onClick={() => setZoomLevel(z => Math.min(z + 0.1, 5))}>ズームイン</button>
+        <button onClick={() => setZoomLevel(z => Math.max(z - 0.1, 0.2))}>ズームアウト</button>
       </div>
 
       <div className="plot-container">
@@ -197,21 +178,9 @@ function MapPage() {
           data={plotData}
           layout={{
             margin: { l: 30, r: 30, t: 30, b: 30 }, dragmode: 'pan',
-            xaxis: {
-              range: x_range, showticklabels: false, zeroline: false,
-              showgrid: true, gridcolor: 'lightgray', gridwidth: 1,
-              scaleanchor: 'y', scaleratio: 1,
-              mirror: true, linecolor: 'black', linewidth: 2
-            },
-            yaxis: {
-              range: y_range, showticklabels: false, zeroline: false,
-              showgrid: true, gridcolor: 'lightgray', gridwidth: 1,
-              scaleanchor: 'x', scaleratio: 1,
-              mirror: true, linecolor: 'black', linewidth: 2
-            },
-            legend: {
-              orientation: 'h', x: 0.5, y: -0.25, xanchor: 'center', yanchor: 'top'
-            }
+            xaxis: { range: x_range, showticklabels: false, zeroline: false, showgrid: true, gridcolor: 'lightgray', gridwidth: 1, scaleanchor: 'y', scaleratio: 1, mirror: true, linecolor: 'black', linewidth: 2 },
+            yaxis: { range: y_range, showticklabels: false, zeroline: false, showgrid: true, gridcolor: 'lightgray', gridwidth: 1, scaleanchor: 'x', scaleratio: 1, mirror: true, linecolor: 'black', linewidth: 2 },
+            legend: { orientation: 'h', x: 0.5, y: -0.25, xanchor: 'center', yanchor: 'top' }
           }}
           config={{ responsive: true, scrollZoom: true, displayModeBar: false }}
         />
