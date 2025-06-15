@@ -75,7 +75,6 @@ function ProductDetail() {
 
       <h2>商品詳細ページ</h2>
       <p><strong>JANコード：</strong>{jan}</p>
-      <p><strong>商品名：</strong>{商品名}</p>
       <p>ここに商品名・味の特徴・香り・価格・画像などを表示していきます。</p>
 
       <div style={{ marginTop: '20px' }}>
