@@ -8,10 +8,10 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* 商品詳細ページ：/products/:jan */}
+        {/* 商品詳細ページ */}
         <Route path="/products/:jan" element={<ProductDetail />} />
 
-        {/* 一覧・散布図ページ（トップ）：/ */}
+        {/* トップページ（スライダー＋散布図） */}
         <Route path="/" element={<MapPage />} />
       </Routes>
     </Router>

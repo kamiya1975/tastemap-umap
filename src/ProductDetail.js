@@ -1,8 +1,9 @@
 // src/ProductDetail.js
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 function ProductDetail() {
-  const jan = window.location.pathname.split('/').pop();
+  const { jan } = useParams(); // ルーティングからJANコード取得
   const [data, setData] = useState([]);
   const [targetWine, setTargetWine] = useState(null);
   const [similarWines, setSimilarWines] = useState([]);
@@ -11,10 +12,14 @@ function ProductDetail() {
     return stored ? JSON.parse(stored)[jan] || 0 : 0;
   });
 
+  // タブを閉じる（戻る）ボタンの挙動
   const handleCloseTab = () => {
-    window.close();
+    if (window.confirm("このタブを閉じて一覧に戻りますか？")) {
+      window.close();
+    }
   };
 
+  // データ読み込みと距離計算（近いワイン抽出）
   useEffect(() => {
     fetch('/pca_result.csv')
       .then(res => res.text())
@@ -36,7 +41,7 @@ function ProductDetail() {
 
         if (target) {
           const distances = parsed
-            .filter(d => String(d.JAN).trim() !== String(jan).trim())
+            .filter(d => String(d.JAN).trim() !== String(jan).trim()) // 自分を除く
             .map(d => {
               const dx = d.BodyAxis - target.BodyAxis;
               const dy = d.SweetAxis - target.SweetAxis;
@@ -50,6 +55,7 @@ function ProductDetail() {
       });
   }, [jan]);
 
+  // 星評価の保存
   const handleRatingChange = (e) => {
     const newRating = parseInt(e.target.value);
     setRating(newRating);
@@ -64,8 +70,9 @@ function ProductDetail() {
       <button onClick={handleCloseTab} style={{ marginBottom: '20px' }}>
         ← 一覧に戻る（タブを閉じる）
       </button>
+
       <h2>商品詳細ページ</h2>
-      <p>JANコード：{jan}</p>
+      <p><strong>JANコード：</strong>{jan}</p>
       <p>ここに商品名・味の特徴・香り・価格・画像などを表示していきます。</p>
 
       <div style={{ marginTop: '20px' }}>
