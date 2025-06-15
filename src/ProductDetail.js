@@ -26,15 +26,15 @@ function ProductDetail() {
         });
         setData(parsed);
 
-        const current = parsed.find(d => String(d.JAN) === jan);
-        setTargetWine(current);
+        const target = parsed.find(d => String(d.JAN).trim() === String(jan).trim());
+        setTargetWine(target);
 
-        if (current) {
+        if (target) {
           const distances = parsed
-            .filter(d => d.JAN !== jan)
+            .filter(d => String(d.JAN).trim() !== String(jan).trim()) // ← 厳密な除外条件
             .map(d => {
-              const dx = d.BodyAxis - current.BodyAxis;
-              const dy = d.SweetAxis - current.SweetAxis;
+              const dx = d.BodyAxis - target.BodyAxis;
+              const dy = d.SweetAxis - target.SweetAxis;
               return { ...d, distance: Math.sqrt(dx * dx + dy * dy) };
             })
             .sort((a, b) => a.distance - b.distance)
