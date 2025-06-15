@@ -55,16 +55,6 @@ function ProductDetail() {
       });
   }, [jan]);
 
-  // 星評価の保存
-  const handleRatingChange = (e) => {
-    const newRating = parseInt(e.target.value);
-    setRating(newRating);
-    const stored = localStorage.getItem('userRatings');
-    const ratings = stored ? JSON.parse(stored) : {};
-    ratings[jan] = newRating;
-    localStorage.setItem('userRatings', JSON.stringify(ratings));
-  };
-
   return (
     <div style={{ padding: '20px' }}>
       <button onClick={handleCloseTab} style={{ marginBottom: '20px' }}>
@@ -74,15 +64,6 @@ function ProductDetail() {
       <h2>商品詳細ページ</h2>
       <p><strong>JANコード：</strong>{jan}</p>
       <p>ここに商品名・味の特徴・香り・価格・画像などを表示していきます。</p>
-
-      <div style={{ marginTop: '20px' }}>
-        <label><strong>星評価：</strong></label>
-        <select value={rating} onChange={handleRatingChange} style={{ marginLeft: '10px' }}>
-          {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
-            <option key={idx} value={idx}>{label}</option>
-          ))}
-        </select>
-      </div>
 
       {similarWines.length > 0 && (
         <div style={{ marginTop: '30px' }}>
