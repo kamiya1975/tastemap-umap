@@ -75,10 +75,19 @@ function MapPage() {
   const bodyRange = Math.max(leftRange, rightRange);
   const sweetRange = Math.max(upRange, downRange);
 
+  useEffect(() => {
+    if (blendF) {
+      const pc1 = ((blendF.BodyAxis - x_min) / (x_max - x_min)) * 100;
+      const pc2 = ((blendF.SweetAxis - y_min) / (y_max - y_min)) * 100;
+      setSliderPc1(pc1);
+      setSliderPc2(pc2);
+    }
+  }, [blendF, x_min, x_max, y_min, y_max]);
+
   const target = useMemo(() => ({
-  x: x_min + (slider_pc1 / 100) * (x_max - x_min),
-  y: y_min + (slider_pc2 / 100) * (y_max - y_min),
-}), [slider_pc1, slider_pc2, x_min, x_max, y_min, y_max]);
+    x: x_min + (slider_pc1 / 100) * (x_max - x_min),
+    y: y_min + (slider_pc2 / 100) * (y_max - y_min),
+  }), [slider_pc1, slider_pc2, x_min, x_max, y_min, y_max]);
 
   const distances = useMemo(() => {
     if (!blendF) return [];
