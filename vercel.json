@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/products/:jan", "destination": "/index.html" },
+    { "source": "/", "destination": "/index.html" }
+  ]
+}
