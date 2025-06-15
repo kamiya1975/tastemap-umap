@@ -9,6 +9,10 @@ function MapPage() {
   const [slider_pc2, setSliderPc2] = useState(50);
   const [userRatings, setUserRatings] = useState({});
 
+  const handleRatingChange = (jan, rating) => {
+    setUserRatings((prev) => ({ ...prev, [jan]: rating }));
+  };
+
   useEffect(() => {
     const handleResize = () => window.dispatchEvent(new Event('resize'));
     setTimeout(handleResize, 300);
