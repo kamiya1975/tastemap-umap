@@ -92,7 +92,7 @@ function MapPage() {
     distances.map((item, index) => {
       const jan = item.JAN;
       const currentRating = userRatings[jan] || 0;
-      const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()}円` : "価格未設定";
+      const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
       return (
         <div key={jan} className="top10-item">
           <strong>
@@ -142,64 +142,56 @@ function MapPage() {
         textposition: 'bottom center', name: '評価バブル', showlegend: false, hoverinfo: 'skip'
       };
     }).filter(Boolean),
-    {
-      x: [target.x], y: [target.y],
-      mode: 'markers', type: 'scatter',
-      marker: { size: 20, color: 'green', symbol: 'x' },
-      name: 'あなたの好み', hoverinfo: 'skip'
-    },
-    {
-      x: distances.map(d => d.BodyAxis),
-      y: distances.map(d => d.SweetAxis),
-      text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`),
-      mode: 'markers+text', type: 'scatter',
-      marker: { size: 10, color: 'white' },
-      textfont: { color: 'black', size: 12 },
-      textposition: 'middle center',
-      name: 'TOP10', showlegend: false, hoverinfo: 'text'
-    }
+    { x: [target.x], y: [target.y], mode: 'markers', type: 'scatter', marker: { size: 20, color: 'green', symbol: 'x' }, name: 'あなたの好み', hoverinfo: 'skip' },
+    { x: distances.map(d => d.BodyAxis), y: distances.map(d => d.SweetAxis), text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`), mode: 'markers+text', type: 'scatter', marker: { size: 10, color: 'white' }, textfont: { color: 'black', size: 12 }, textposition: 'middle center', name: 'TOP10', showlegend: false, hoverinfo: 'text' },
   ];
 
   return (
     <div style={{ padding: '10px' }}>
       <h2>基準のワインを飲んだ印象は？</h2>
 
-      {/* 甘みスライダー */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
           <span>← こんなに甘みは不要</span>
           <span>もっと甘みが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc2} onChange={(e) => setSliderPc2(Number(e.target.value))} />
+        <input type="range" min="0" max="100" value={slider_pc2} style={{ width: '100%' }} onChange={(e) => setSliderPc2(Number(e.target.value))} />
       </div>
 
-      {/* ボディスライダー */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
           <span>← もっと軽やかが良い</span>
           <span>濃厚なコクが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc1} onChange={(e) => setSliderPc1(Number(e.target.value))} />
+        <input type="range" min="0" max="100" value={slider_pc1} style={{ width: '100%' }} onChange={(e) => setSliderPc1(Number(e.target.value))} />
       </div>
 
-      {/* 拡大縮小 */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
         <button onClick={() => setZoomLevel(z => Math.min(z + 1.0, 5))}>+</button>
         <button onClick={() => setZoomLevel(z => Math.max(z - 1.0, 0.2))}>-</button>
       </div>
 
-      {/* 散布図 */}
       <div className="plot-container">
         <Plot
-          useResizeHandler
-          style={{ width: '100%', height: '100%' }}
+          useResizeHandler={true}
+          style={{ width: 'calc(100vw - 20px)', height: '100%' }}
           data={plotData}
           layout={{
             margin: { l: 30, r: 30, t: 30, b: 30 },
             dragmode: 'pan',
-            xaxis: { range: x_range, scaleanchor: 'y', showticklabels: false },
-            yaxis: { range: y_range, scaleratio: 1, showticklabels: false },
-            legend: { orientation: 'h', x: 0.5, y: -0.25, xanchor: 'center', yanchor: 'top' },
+            xaxis: {
+              range: x_range, showticklabels: false, showgrid: true,
+              gridcolor: 'lightgray', gridwidth: 1,
+              zeroline: false, showline: true, mirror: true,
+              linecolor: 'black', linewidth: 2, scaleanchor: 'y'
+            },
+            yaxis: {
+              range: y_range, showticklabels: false, showgrid: true,
+              gridcolor: 'lightgray', gridwidth: 1,
+              zeroline: false, showline: true, mirror: true,
+              linecolor: 'black', linewidth: 2, scaleratio: 1
+            },
+            legend: { orientation: 'h', x: 0.5, y: -0.25, xanchor: 'center', yanchor: 'top' }
           }}
           config={{ responsive: true, scrollZoom: true, displayModeBar: false }}
         />

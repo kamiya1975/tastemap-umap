@@ -12,13 +12,6 @@ function ProductDetail() {
     return stored ? JSON.parse(stored)[jan] || 0 : 0;
   });
 
-  // タブを閉じる（戻る）ボタンの挙動
-  const handleCloseTab = () => {
-    if (window.confirm("このタブを閉じて一覧に戻りますか？")) {
-      window.close();
-    }
-  };
-
   // データ読み込みと距離計算（近いワイン抽出）
   useEffect(() => {
     fetch('/pca_result.csv')
