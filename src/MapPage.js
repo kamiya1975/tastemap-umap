@@ -93,14 +93,14 @@ function MapPage() {
     const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
 
     return (
-      <div key={jan} className="top10-item">
+      <div key={jan} className="top10-item" style={{ marginBottom: '15px' }}>
         <strong>
           <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
             {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
           </Link>
         </strong>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
-          <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '5px', marginTop: '5px' }}>
+          <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))} style={{ maxWidth: '100%', fontSize: '14px' }}>
             {ratingOptions.map((label, idx) => (
               <option key={idx} value={idx}>{label}</option>
             ))}
@@ -125,22 +125,20 @@ function MapPage() {
       <h2>基準のワインを飲んだ印象は？</h2>
 
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
-          <span>← こんなに甘みは不要</span>
-          <span>もっと甘みが欲しい →</span>
+        <div style={{ fontWeight: 'bold', marginBottom: '5px', textAlign: 'center' }}>
+          ← こんなに甘みは不要　/　もっと甘みが欲しい →
         </div>
-        <input type="range" min="0" max="100" value={slider_pc2} onChange={(e) => setSliderPc2(Number(e.target.value))} />
+        <input type="range" min="0" max="100" value={slider_pc2} style={{ width: '100%' }} onChange={(e) => setSliderPc2(Number(e.target.value))} />
       </div>
 
       <div style={{ marginBottom: '20px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
-          <span>← もっと軽やかが良い</span>
-          <span>濃厚なコクが欲しい →</span>
+        <div style={{ fontWeight: 'bold', marginBottom: '5px', textAlign: 'center' }}>
+          ← もっと軽やかが良い　/　濃厚なコクが欲しい →
         </div>
-        <input type="range" min="0" max="100" value={slider_pc1} onChange={(e) => setSliderPc1(Number(e.target.value))} />
+        <input type="range" min="0" max="100" value={slider_pc1} style={{ width: '100%' }} onChange={(e) => setSliderPc1(Number(e.target.value))} />
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
         <button onClick={() => setZoomLevel(prev => Math.min(prev + 0.1, 10))}>＋</button>
         <button onClick={() => setZoomLevel(prev => Math.max(prev - 0.1, 0.2))}>−</button>
       </div>
