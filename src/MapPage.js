@@ -5,15 +5,20 @@ import { Link } from 'react-router-dom';
 
 function MapPage() {
   const [data, setData] = useState([]);
-
-  // ✅ localStorage対応スライダー・ズーム
-  const [slider_pc1, setSliderPc1] = useState(() => parseInt(localStorage.getItem('slider_pc1')) || 50);
-  const [slider_pc2, setSliderPc2] = useState(() => parseInt(localStorage.getItem('slider_pc2')) || 50);
+  const [slider_pc1, setSliderPc1] = useState(50);
+  const [slider_pc2, setSliderPc2] = useState(50);
   const [zoomLevel, setZoomLevel] = useState(() => parseFloat(localStorage.getItem('zoomLevel')) || 2.0);
-
   const [userRatings, setUserRatings] = useState({});
 
-  // 状態保存
+  useEffect(() => {
+    const stored1 = localStorage.getItem('slider_pc1');
+    const stored2 = localStorage.getItem('slider_pc2');
+    if (stored1) setSliderPc1(parseInt(stored1));
+    if (stored2) setSliderPc2(parseInt(stored2));
+    const storedRatings = localStorage.getItem('userRatings');
+    if (storedRatings) setUserRatings(JSON.parse(storedRatings));
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('slider_pc1', slider_pc1);
   }, [slider_pc1]);
@@ -25,26 +30,6 @@ function MapPage() {
   useEffect(() => {
     localStorage.setItem('zoomLevel', zoomLevel);
   }, [zoomLevel]);
-
-  const handleRatingChange = (jan, rating) => {
-    const updated = { ...userRatings, [jan]: rating };
-    setUserRatings(updated);
-    localStorage.setItem('userRatings', JSON.stringify(updated));
-  };
-
-  const loadUserRatings = () => {
-    const stored = localStorage.getItem('userRatings');
-    setUserRatings(stored ? JSON.parse(stored) : {});
-  };
-
-  useEffect(() => {
-    loadUserRatings();
-    const handleStorage = (e) => {
-      if (e.key === 'userRatings') loadUserRatings();
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -72,6 +57,23 @@ function MapPage() {
         希望小売価格: metaMap[String(d.JAN)]?.希望小売価格 || null,
         ...metaMap[String(d.JAN)]
       }));
+
+      const blendF = merged.find(d => d.JAN === 'blendF');
+      const xValues = merged.map(d => d.BodyAxis);
+      const yValues = merged.map(d => d.SweetAxis);
+      const x_min = Math.min(...xValues);
+      const x_max = Math.max(...xValues);
+      const y_min = Math.min(...yValues);
+      const y_max = Math.max(...yValues);
+
+      // blendFの位置を0-100にスケーリングして初期値に反映
+      if (blendF) {
+        const pc1 = ((blendF.BodyAxis - x_min) / (x_max - x_min)) * 100;
+        const pc2 = ((blendF.SweetAxis - y_min) / (y_max - y_min)) * 100;
+        setSliderPc1(pc1);
+        setSliderPc2(pc2);
+      }
+
       setData(merged);
     });
   }, []);
@@ -84,16 +86,12 @@ function MapPage() {
   const y_min = Math.min(...yValues);
   const y_max = Math.max(...yValues);
 
-  const bodyRange = Math.max(blendF ? blendF.BodyAxis - x_min : 0, blendF ? x_max - blendF.BodyAxis : 0);
-  const sweetRange = Math.max(blendF ? blendF.SweetAxis - y_min : 0, blendF ? y_max - blendF.SweetAxis : 0);
-
   const target = useMemo(() => ({
-    x: blendF ? blendF.BodyAxis + ((slider_pc1 - 50) / 50) * bodyRange : 0,
-    y: blendF ? blendF.SweetAxis + ((slider_pc2 - 50) / 50) * sweetRange : 0
-  }), [slider_pc1, slider_pc2, blendF, bodyRange, sweetRange]);
+    x: x_min + (slider_pc1 / 100) * (x_max - x_min),
+    y: y_min + (slider_pc2 / 100) * (y_max - y_min)
+  }), [slider_pc1, slider_pc2, x_min, x_max, y_min, y_max]);
 
   const distances = useMemo(() => {
-    if (!blendF) return [];
     return data.filter(d => d.JAN !== 'blendF')
       .map(d => {
         const dx = d.BodyAxis - target.x;
@@ -102,7 +100,7 @@ function MapPage() {
       })
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 10);
-  }, [data, target, blendF]);
+  }, [data, target]);
 
   const typeColor = { Spa: 'blue', White: 'gold', Red: 'red', Rose: 'pink' };
   const typeList = ['Spa', 'White', 'Red', 'Rose'];
@@ -120,7 +118,11 @@ function MapPage() {
             </Link>
           </strong>
           <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
-            <select value={currentRating} onChange={(e) => handleRatingChange(jan, parseInt(e.target.value))}>
+            <select value={currentRating} onChange={(e) => {
+              const updated = { ...userRatings, [jan]: parseInt(e.target.value) };
+              setUserRatings(updated);
+              localStorage.setItem('userRatings', JSON.stringify(updated));
+            }}>
               {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
                 <option key={idx} value={idx}>{label}</option>
               ))}
@@ -132,8 +134,8 @@ function MapPage() {
   ), [distances, userRatings]);
 
   const zoomFactor = 1 / zoomLevel;
-  const x_range = blendF ? [blendF.BodyAxis - bodyRange * zoomFactor, blendF.BodyAxis + bodyRange * zoomFactor] : [x_min, x_max];
-  const y_range = blendF ? [blendF.SweetAxis - sweetRange * zoomFactor, blendF.SweetAxis + sweetRange * zoomFactor] : [y_min, y_max];
+  const x_range = blendF ? [blendF.BodyAxis - (x_max - x_min) * zoomFactor / 2, blendF.BodyAxis + (x_max - x_min) * zoomFactor / 2] : [x_min, x_max];
+  const y_range = blendF ? [blendF.SweetAxis - (y_max - y_min) * zoomFactor / 2, blendF.SweetAxis + (y_max - y_min) * zoomFactor / 2] : [y_min, y_max];
 
   const plotData = [
     ...typeList.map(type => ({
