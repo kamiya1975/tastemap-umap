@@ -1,4 +1,3 @@
-// src/MapPage.js
 import React, { useState, useEffect, useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import './App.css';
@@ -6,10 +5,26 @@ import { Link } from 'react-router-dom';
 
 function MapPage() {
   const [data, setData] = useState([]);
-  const [slider_pc1, setSliderPc1] = useState(50);
-  const [slider_pc2, setSliderPc2] = useState(50);
+
+  // ✅ localStorage対応スライダー・ズーム
+  const [slider_pc1, setSliderPc1] = useState(() => parseInt(localStorage.getItem('slider_pc1')) || 50);
+  const [slider_pc2, setSliderPc2] = useState(() => parseInt(localStorage.getItem('slider_pc2')) || 50);
+  const [zoomLevel, setZoomLevel] = useState(() => parseFloat(localStorage.getItem('zoomLevel')) || 2.0);
+
   const [userRatings, setUserRatings] = useState({});
-  const [zoomLevel, setZoomLevel] = useState(2.0);
+
+  // 状態保存
+  useEffect(() => {
+    localStorage.setItem('slider_pc1', slider_pc1);
+  }, [slider_pc1]);
+
+  useEffect(() => {
+    localStorage.setItem('slider_pc2', slider_pc2);
+  }, [slider_pc2]);
+
+  useEffect(() => {
+    localStorage.setItem('zoomLevel', zoomLevel);
+  }, [zoomLevel]);
 
   const handleRatingChange = (jan, rating) => {
     const updated = { ...userRatings, [jan]: rating };
