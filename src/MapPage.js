@@ -11,21 +11,14 @@ function MapPage() {
   const [userRatings, setUserRatings] = useState({});
 
   useEffect(() => {
-    const stored1 = localStorage.getItem('slider_pc1');
-    const stored2 = localStorage.getItem('slider_pc2');
-    if (stored1) setSliderPc1(parseInt(stored1));
-    if (stored2) setSliderPc2(parseInt(stored2));
     const storedRatings = localStorage.getItem('userRatings');
     if (storedRatings) setUserRatings(JSON.parse(storedRatings));
   }, []);
 
   useEffect(() => {
     localStorage.setItem('slider_pc1', slider_pc1);
-  }, [slider_pc1]);
-
-  useEffect(() => {
     localStorage.setItem('slider_pc2', slider_pc2);
-  }, [slider_pc2]);
+  }, [slider_pc1, slider_pc2]);
 
   useEffect(() => {
     localStorage.setItem('zoomLevel', zoomLevel);
@@ -66,7 +59,7 @@ function MapPage() {
       const y_min = Math.min(...yValues);
       const y_max = Math.max(...yValues);
 
-      // blendFの位置を0-100にスケーリングして初期値に反映
+      // ✅ blendFの位置をスライダーの0〜100スケールに変換
       if (blendF) {
         const pc1 = ((blendF.BodyAxis - x_min) / (x_max - x_min)) * 100;
         const pc2 = ((blendF.SweetAxis - y_min) / (y_max - y_min)) * 100;
@@ -78,14 +71,15 @@ function MapPage() {
     });
   }, []);
 
-  const blendF = data.find((d) => d.JAN === 'blendF');
-  const xValues = data.map((d) => d.BodyAxis);
-  const yValues = data.map((d) => d.SweetAxis);
+  const blendF = data.find(d => d.JAN === 'blendF');
+  const xValues = data.map(d => d.BodyAxis);
+  const yValues = data.map(d => d.SweetAxis);
   const x_min = Math.min(...xValues);
   const x_max = Math.max(...xValues);
   const y_min = Math.min(...yValues);
   const y_max = Math.max(...yValues);
 
+  // ✅ スライダー値を座標に変換（線形補間）
   const target = useMemo(() => ({
     x: x_min + (slider_pc1 / 100) * (x_max - x_min),
     y: y_min + (slider_pc2 / 100) * (y_max - y_min)
