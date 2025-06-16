@@ -1,9 +1,8 @@
-// src/ProductDetail.js
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
 function ProductDetail() {
-  const { jan } = useParams(); // ルーティングからJANコード取得
+  const { jan } = useParams();
   const [data, setData] = useState([]);
   const [targetWine, setTargetWine] = useState(null);
   const [similarWines, setSimilarWines] = useState([]);
@@ -12,16 +11,17 @@ function ProductDetail() {
     return stored ? JSON.parse(stored)[jan] || 0 : 0;
   });
 
-  // ⭐️ handleCloseTab を明示的に定義
-  const handleCloseTab = () => {
-  if (window.history.length > 1) {
-    window.history.back();
-  } else {
-    window.location.href = '/';
-  }
-};
+  const [sliderPc1, setSliderPc1] = useState(50);
+  const [sliderPc2, setSliderPc2] = useState(50);
 
-  // データ読み込みと距離計算（近いワイン抽出）
+  const handleCloseTab = () => {
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = '/';
+    }
+  };
+
   useEffect(() => {
     fetch('/pca_result.csv')
       .then(res => res.text())
@@ -36,28 +36,51 @@ function ProductDetail() {
           });
           return obj;
         });
-        setData(parsed);
 
+        setData(parsed);
         const target = parsed.find(d => String(d.JAN).trim() === String(jan).trim());
         setTargetWine(target);
 
         if (target) {
-          const distances = parsed
-            .filter(d => String(d.JAN).trim() !== String(jan).trim())
-            .map(d => {
-              const dx = d.BodyAxis - target.BodyAxis;
-              const dy = d.SweetAxis - target.SweetAxis;
-              return { ...d, distance: Math.sqrt(dx * dx + dy * dy) };
-            })
-            .sort((a, b) => a.distance - b.distance)
-            .slice(0, 5);
+          const xValues = parsed.map(d => d.BodyAxis);
+          const yValues = parsed.map(d => d.SweetAxis);
+          const x_min = Math.min(...xValues);
+          const x_max = Math.max(...xValues);
+          const y_min = Math.min(...yValues);
+          const y_max = Math.max(...yValues);
 
-          setSimilarWines(distances);
+          setSliderPc1(((target.BodyAxis - x_min) / (x_max - x_min)) * 100);
+          setSliderPc2(((target.SweetAxis - y_min) / (y_max - y_min)) * 100);
         }
       });
   }, [jan]);
 
-  // 星評価の保存
+  useEffect(() => {
+    if (!data.length || !targetWine) return;
+
+    const xValues = data.map(d => d.BodyAxis);
+    const yValues = data.map(d => d.SweetAxis);
+    const x_min = Math.min(...xValues);
+    const x_max = Math.max(...xValues);
+    const y_min = Math.min(...yValues);
+    const y_max = Math.max(...yValues);
+
+    const x = x_min + (sliderPc1 / 100) * (x_max - x_min);
+    const y = y_min + (sliderPc2 / 100) * (y_max - y_min);
+
+    const distances = data
+      .filter(d => String(d.JAN).trim() !== String(jan).trim())
+      .map(d => {
+        const dx = d.BodyAxis - x;
+        const dy = d.SweetAxis - y;
+        return { ...d, distance: Math.sqrt(dx * dx + dy * dy) };
+      })
+      .sort((a, b) => a.distance - b.distance)
+      .slice(0, 5);
+
+    setSimilarWines(distances);
+  }, [sliderPc1, sliderPc2, data, jan, targetWine]);
+
   const handleRatingChange = (e) => {
     const newRating = parseInt(e.target.value);
     setRating(newRating);
@@ -73,7 +96,7 @@ function ProductDetail() {
         ← 一覧に戻る（タブを閉じる）
       </button>
 
-      <h2>商品詳細ページ</h2>
+      <h2>{targetWine?.商品名 || '商品名を取得中...'}</h2>
       <p><strong>JANコード：</strong>{jan}</p>
       <p>ここに商品名・味の特徴・香り・価格・画像などを表示していきます。</p>
 
@@ -86,9 +109,29 @@ function ProductDetail() {
         </select>
       </div>
 
+      <div style={{ marginTop: '30px' }}>
+        <h3>この味に近いワインを再検索</h3>
+
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+            <span>← 軽やか</span>
+            <span>コクあり →</span>
+          </div>
+          <input type="range" min="0" max="100" value={sliderPc1} onChange={e => setSliderPc1(Number(e.target.value))} style={{ width: '100%' }} />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+            <span>← 甘さ控えめ</span>
+            <span>甘め →</span>
+          </div>
+          <input type="range" min="0" max="100" value={sliderPc2} onChange={e => setSliderPc2(Number(e.target.value))} style={{ width: '100%' }} />
+        </div>
+      </div>
+
       {similarWines.length > 0 && (
         <div style={{ marginTop: '30px' }}>
-          <h3>この商品に近い味わいのワイン</h3>
+          <h3>この味に近いワイン</h3>
           <ul>
             {similarWines.map((wine, index) => (
               <li key={wine.JAN} style={{ marginBottom: '10px' }}>
