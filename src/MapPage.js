@@ -7,6 +7,8 @@ function MapPage() {
   const [data, setData] = useState([]);
   const [slider_pc1, setSliderPc1] = useState(50);
   const [slider_pc2, setSliderPc2] = useState(50);
+  const [initial_pc1, setInitialPc1] = useState(50);
+  const [initial_pc2, setInitialPc2] = useState(50);
   const [zoomLevel, setZoomLevel] = useState(() => parseFloat(localStorage.getItem('zoomLevel')) || 2.0);
   const [userRatings, setUserRatings] = useState({});
 
@@ -59,10 +61,11 @@ function MapPage() {
       const y_min = Math.min(...yValues);
       const y_max = Math.max(...yValues);
 
-      // ✅ blendFの位置をスライダーの0〜100スケールに変換
       if (blendF) {
         const pc1 = ((blendF.BodyAxis - x_min) / (x_max - x_min)) * 100;
         const pc2 = ((blendF.SweetAxis - y_min) / (y_max - y_min)) * 100;
+        setInitialPc1(pc1);
+        setInitialPc2(pc2);
         setSliderPc1(pc1);
         setSliderPc2(pc2);
       }
@@ -176,16 +179,30 @@ function MapPage() {
           <span>← こんなに甘みは不要</span>
           <span>もっと甘みが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc2} style={{ width: '100%' }} onChange={(e) => setSliderPc2(Number(e.target.value))} />
-      </div>
+        <input 
+         type="range" 
+         min={-50}
+         max={50} 
+         value={slider_pc2 - initial_pc2}
+         style={{ width: '100%' }} 
+         onChange={(e) => setSliderPc2(initial_pc2 + Number(e.target.value))}
+         />
+         </div>
 
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
           <span>← もっと軽やかが良い</span>
           <span>濃厚なコクが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc1} style={{ width: '100%' }} onChange={(e) => setSliderPc1(Number(e.target.value))} />
-      </div>
+        <input 
+         type="range" 
+         min={-50}
+         max={50} 
+         value={slider_pc1 - initial_pc1}
+         style={{ width: '100%' }} 
+         onChange={(e) => setSliderPc1(initial_pc1 + Number(e.target.value))}
+         />
+         </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
         <button onClick={() => setZoomLevel(z => Math.min(z + 1.0, 5))}>+</button>
