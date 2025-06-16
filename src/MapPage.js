@@ -73,9 +73,9 @@ function MapPage() {
   const sweetRange = Math.max(blendF ? blendF.SweetAxis - y_min : 0, blendF ? y_max - blendF.SweetAxis : 0);
 
   const target = useMemo(() => ({
-    x: x_min + (slider_pc1 / 100) * (x_max - x_min),
-    y: y_min + (slider_pc2 / 100) * (y_max - y_min)
-  }), [slider_pc1, slider_pc2, x_min, x_max, y_min, y_max]);
+    x: blendF ? blendF.BodyAxis + ((slider_pc1 - 50) / 50) * bodyRange : 0,
+    y: blendF ? blendF.SweetAxis + ((slider_pc2 - 50) / 50) * sweetRange : 0
+  }), [slider_pc1, slider_pc2, blendF, bodyRange, sweetRange]);
 
   const distances = useMemo(() => {
     if (!blendF) return [];
