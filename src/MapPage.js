@@ -7,6 +7,8 @@ function MapPage() {
   const [data, setData] = useState([]);
   const [slider_pc1, setSliderPc1] = useState(50);
   const [slider_pc2, setSliderPc2] = useState(50);
+  const [initial_pc1, setInitialPc1] = useState(50);
+  const [initial_pc2, setInitialPc2] = useState(50);
   const [zoomLevel, setZoomLevel] = useState(() => parseFloat(localStorage.getItem('zoomLevel')) || 2.0);
   const [userRatings, setUserRatings] = useState({});
 
@@ -59,10 +61,11 @@ function MapPage() {
       const y_min = Math.min(...yValues);
       const y_max = Math.max(...yValues);
 
-      // ✅ blendFの位置をスライダーの0〜100スケールに変換
       if (blendF) {
         const pc1 = ((blendF.BodyAxis - x_min) / (x_max - x_min)) * 100;
         const pc2 = ((blendF.SweetAxis - y_min) / (y_max - y_min)) * 100;
+        setInitialPc1(pc1);
+        setInitialPc2(pc2);
         setSliderPc1(pc1);
         setSliderPc2(pc2);
       }
@@ -71,7 +74,6 @@ function MapPage() {
     });
   }, []);
 
-  const blendF = data.find(d => d.JAN === 'blendF');
   const xValues = data.map(d => d.BodyAxis);
   const yValues = data.map(d => d.SweetAxis);
   const x_min = Math.min(...xValues);
@@ -79,7 +81,6 @@ function MapPage() {
   const y_min = Math.min(...yValues);
   const y_max = Math.max(...yValues);
 
-  // ✅ スライダー値を座標に変換（線形補間）
   const target = useMemo(() => ({
     x: x_min + (slider_pc1 / 100) * (x_max - x_min),
     y: y_min + (slider_pc2 / 100) * (y_max - y_min)
@@ -96,76 +97,10 @@ function MapPage() {
       .slice(0, 10);
   }, [data, target]);
 
-  const typeColor = { Spa: 'blue', White: 'gold', Red: 'red', Rose: 'pink' };
-  const typeList = ['Spa', 'White', 'Red', 'Rose'];
-
-  const top10List = useMemo(() => (
-    distances.map((item, index) => {
-      const jan = item.JAN;
-      const currentRating = userRatings[jan] || 0;
-      const price = item.希望小売価格 !== null ? `${parseInt(item.希望小売価格).toLocaleString()} 円` : "価格未設定";
-      return (
-        <div key={jan} className="top10-item">
-          <strong>
-            <Link to={`/products/${jan}`} style={{ textDecoration: 'none', color: 'black' }}>
-              {`${index + 1}. ${item['商品名']} (${item.Type}) ${price}`}
-            </Link>
-          </strong>
-          <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px' }}>
-            <select value={currentRating} onChange={(e) => {
-              const updated = { ...userRatings, [jan]: parseInt(e.target.value) };
-              setUserRatings(updated);
-              localStorage.setItem('userRatings', JSON.stringify(updated));
-            }}>
-              {["未評価", "★", "★★", "★★★", "★★★★", "★★★★★"].map((label, idx) => (
-                <option key={idx} value={idx}>{label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      );
-    })
-  ), [distances, userRatings]);
-
   const zoomFactor = 1 / zoomLevel;
+  const blendF = data.find((d) => d.JAN === 'blendF');
   const x_range = blendF ? [blendF.BodyAxis - (x_max - x_min) * zoomFactor / 2, blendF.BodyAxis + (x_max - x_min) * zoomFactor / 2] : [x_min, x_max];
   const y_range = blendF ? [blendF.SweetAxis - (y_max - y_min) * zoomFactor / 2, blendF.SweetAxis + (y_max - y_min) * zoomFactor / 2] : [y_min, y_max];
-
-  const plotData = [
-    ...typeList.map(type => ({
-      x: data.filter(d => d.Type === type).map(d => d.BodyAxis),
-      y: data.filter(d => d.Type === type).map(d => d.SweetAxis),
-      text: data.filter(d => d.Type === type).map(d => `${d["商品名"]}`),
-      hoverinfo: 'text+name',
-      mode: 'markers',
-      type: 'scatter',
-      marker: { size: 5, color: typeColor[type] },
-      name: type,
-    })),
-    ...Object.entries(userRatings).filter(([jan, rating]) => rating > 0).map(([jan, rating]) => {
-      const wine = data.find(d => String(d.JAN).trim() === String(jan).trim());
-      if (!wine) return null;
-      return {
-        x: [wine.BodyAxis],
-        y: [wine.SweetAxis],
-        text: [""],
-        mode: 'markers+text',
-        type: 'scatter',
-        marker: {
-          size: rating * 6 + 8,
-          color: 'orange',
-          opacity: 0.8,
-          line: { color: 'green', width: 1.5 }
-        },
-        textposition: 'bottom center',
-        name: '評価バブル',
-        showlegend: false,
-        hoverinfo: 'skip'
-      };
-    }).filter(Boolean),
-    { x: [target.x], y: [target.y], mode: 'markers', type: 'scatter', marker: { size: 20, color: 'green', symbol: 'x' }, name: 'あなたの好み', hoverinfo: 'skip' },
-    { x: distances.map(d => d.BodyAxis), y: distances.map(d => d.SweetAxis), text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`), mode: 'markers+text', type: 'scatter', marker: { size: 10, color: 'white' }, textfont: { color: 'black', size: 12 }, textposition: 'middle center', name: 'TOP10', showlegend: false, hoverinfo: 'text' },
-  ];
 
   return (
     <div style={{ padding: '10px' }}>
@@ -176,7 +111,14 @@ function MapPage() {
           <span>← こんなに甘みは不要</span>
           <span>もっと甘みが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc2} style={{ width: '100%' }} onChange={(e) => setSliderPc2(Number(e.target.value))} />
+        <input
+          type="range"
+          min={-50}
+          max={50}
+          value={slider_pc2 - initial_pc2}
+          style={{ width: '100%' }}
+          onChange={(e) => setSliderPc2(initial_pc2 + Number(e.target.value))}
+        />
       </div>
 
       <div style={{ marginBottom: '20px' }}>
@@ -184,7 +126,14 @@ function MapPage() {
           <span>← もっと軽やかが良い</span>
           <span>濃厚なコクが欲しい →</span>
         </div>
-        <input type="range" min="0" max="100" value={slider_pc1} style={{ width: '100%' }} onChange={(e) => setSliderPc1(Number(e.target.value))} />
+        <input
+          type="range"
+          min={-50}
+          max={50}
+          value={slider_pc1 - initial_pc1}
+          style={{ width: '100%' }}
+          onChange={(e) => setSliderPc1(initial_pc1 + Number(e.target.value))}
+        />
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
@@ -196,7 +145,39 @@ function MapPage() {
         <Plot
           useResizeHandler={true}
           style={{ width: 'calc(100vw - 20px)', height: '100%' }}
-          data={plotData}
+          data={[
+            {
+              x: data.map(d => d.BodyAxis),
+              y: data.map(d => d.SweetAxis),
+              mode: 'markers',
+              type: 'scatter',
+              text: data.map(d => d.商品名),
+              marker: { size: 5, color: 'gray' },
+              name: '全ワイン'
+            },
+            {
+              x: [target.x],
+              y: [target.y],
+              mode: 'markers',
+              type: 'scatter',
+              marker: { size: 20, color: 'green', symbol: 'x' },
+              name: 'あなたの好み',
+              hoverinfo: 'skip'
+            },
+            {
+              x: distances.map(d => d.BodyAxis),
+              y: distances.map(d => d.SweetAxis),
+              text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`),
+              mode: 'markers+text',
+              type: 'scatter',
+              marker: { size: 10, color: 'white' },
+              textfont: { color: 'black', size: 12 },
+              textposition: 'middle center',
+              name: 'TOP10',
+              showlegend: false,
+              hoverinfo: 'text'
+            },
+          ]}
           layout={{
             margin: { l: 30, r: 30, t: 30, b: 30 },
             dragmode: 'pan',
@@ -231,9 +212,6 @@ function MapPage() {
           config={{ responsive: true, scrollZoom: true, displayModeBar: false }}
         />
       </div>
-
-      <h2>あなたの好みに寄り添うワイン</h2>
-      {top10List}
     </div>
   );
 }
