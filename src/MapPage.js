@@ -1,4 +1,3 @@
-// src/MapPage.js
 import React, { useState, useEffect, useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import './App.css';
@@ -6,15 +5,26 @@ import { Link } from 'react-router-dom';
 
 function MapPage() {
   const [data, setData] = useState([]);
-  const [slider_pc1, setSliderPc1] = useState(50);
-  const [slider_pc2, setSliderPc2] = useState(50);
-  const [zoomLevel, setZoomLevel] = useState(() => parseFloat(localStorage.getItem('zoomLevel')) || 2.5);
-  const [userRatings, setUserRatings] = useState({});
 
-  useEffect(() => {
-    const storedRatings = localStorage.getItem('userRatings');
-    if (storedRatings) setUserRatings(JSON.parse(storedRatings));
-  }, []);
+  const [slider_pc1, setSliderPc1] = useState(() => {
+    const saved = localStorage.getItem('slider_pc1');
+    return saved ? Number(saved) : 50;
+  });
+
+  const [slider_pc2, setSliderPc2] = useState(() => {
+    const saved = localStorage.getItem('slider_pc2');
+    return saved ? Number(saved) : 50;
+  });
+
+  const [zoomLevel, setZoomLevel] = useState(() => {
+    const saved = localStorage.getItem('zoomLevel');
+    return saved ? parseFloat(saved) : 2.0;
+  });
+
+  const [userRatings, setUserRatings] = useState(() => {
+    const stored = localStorage.getItem('userRatings');
+    return stored ? JSON.parse(stored) : {};
+  });
 
   useEffect(() => {
     localStorage.setItem('slider_pc1', slider_pc1);
@@ -171,6 +181,15 @@ function MapPage() {
     { x: distances.map(d => d.BodyAxis), y: distances.map(d => d.SweetAxis), text: distances.map((d, i) => '❶❷❸❹❺❻❼❽❾❿'[i] || `${i + 1}`), mode: 'markers+text', type: 'scatter', marker: { size: 10, color: 'white' }, textfont: { color: 'black', size: 12 }, textposition: 'middle center', name: 'TOP10', showlegend: false, hoverinfo: 'text' },
   ];
 
+       const handleReset = () => {
+        setSliderPc1(50);
+        setSliderPc2(50);
+        setZoomLevel(2.0);
+        localStorage.setItem('slider_pc1', '50');
+        localStorage.setItem('slider_pc2', '50');
+        localStorage.setItem('zoomLevel', '2.0');
+       };
+
   return (
     <div style={{ padding: '10px' }}>
       <h2>基準のワインを飲んだ印象は？</h2>
@@ -205,6 +224,10 @@ function MapPage() {
           style={{ width: '100%' }}
           onChange={(e) => setSliderPc1(Number(e.target.value))}
         />
+      </div>
+
+      <div style={{ marginBottom: '20px' }}>
+       <button onClick={handleReset}>初期状態に戻す</button>
       </div>
 
       {/* ズーム */}
