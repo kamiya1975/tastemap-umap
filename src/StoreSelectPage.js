@@ -8,10 +8,10 @@ function StoreSelectPage() {
   const dummyStores = [
     { name: 'スーパーマーケットA ◯◯◯店', distance: '1.5km' },
     { name: 'スーパーマーケットB ◯◯◯店', distance: '1.6km' },
-    { name: 'スーパーマーケットA ◯◯◯店', distance: '2.5km' },
-    { name: 'スーパーマーケットC ◯◯◯店', distance: '3.5km' },
-    { name: 'スーパーマーケットD ◯◯◯店', distance: '3.6km' },
-    { name: 'スーパーマーケットA ◯◯◯店', distance: '5.5km' },
+    { name: 'スーパーマーケットC ◯◯◯店', distance: '2.5km' },
+    { name: 'スーパーマーケットD ◯◯◯店', distance: '3.5km' },
+    { name: 'スーパーマーケットE ◯◯◯店', distance: '3.6km' },
+    { name: 'スーパーマーケットF ◯◯◯店', distance: '5.5km' },
   ];
 
   const handleSelect = (store) => {
@@ -25,7 +25,6 @@ function StoreSelectPage() {
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ backgroundColor: '#ddd' }}>
-            <th style={{ padding: '10px' }}>📍</th>
             <th style={{ textAlign: 'left' }}>店舗一覧</th>
             <th style={{ textAlign: 'right' }}>距離</th>
           </tr>
