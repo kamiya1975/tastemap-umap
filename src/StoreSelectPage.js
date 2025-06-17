@@ -6,12 +6,12 @@ function StoreSelectPage() {
   const navigate = useNavigate();
 
   const dummyStores = [
-    { name: 'スーパーマーケットA ◯◯◯店', distance: '1.5km' },
-    { name: 'スーパーマーケットB ◯◯◯店', distance: '1.6km' },
-    { name: 'スーパーマーケットC ◯◯◯店', distance: '2.5km' },
-    { name: 'スーパーマーケットD ◯◯◯店', distance: '3.5km' },
-    { name: 'スーパーマーケットE ◯◯◯店', distance: '3.6km' },
-    { name: 'スーパーマーケットF ◯◯◯店', distance: '5.5km' },
+    { name: 'スーパーマーケットA店', distance: '1.5km' },
+    { name: 'スーパーマーケットB店', distance: '1.6km' },
+    { name: 'スーパーマーケットC店', distance: '2.5km' },
+    { name: 'スーパーマーケットD店', distance: '3.5km' },
+    { name: 'スーパーマーケットE店', distance: '3.6km' },
+    { name: 'スーパーマーケットF店', distance: '5.5km' },
   ];
 
   const handleSelect = (store) => {
