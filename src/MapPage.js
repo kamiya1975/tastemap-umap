@@ -230,10 +230,7 @@ function MapPage() {
       <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
         <button onClick={() => setZoomLevel(z => Math.min(z + 1.0, 5))}>＋</button>
         <button onClick={() => setZoomLevel(z => Math.max(z - 1.0, 0.2))}>−</button>
-      </div>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
-       <button onClick={handleReset}>×</button>
+        <button onClick={handleReset}>MAP初期化</button>
       </div>
 
       {/* 散布図 */}
