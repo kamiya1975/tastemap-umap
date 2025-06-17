@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './App.css'; // スタイリングはお好みで調整
+import './App.css';
 
 function StoreSelectPage() {
   const navigate = useNavigate();
@@ -15,8 +15,7 @@ function StoreSelectPage() {
   ];
 
   const handleSelect = (store) => {
-    // 本来はここで選択店舗を保存する処理などが必要
-    // 現状はどの店舗を選んでもマップページへ遷移
+    console.log('選択した店舗:', store.name);
     navigate('/map');
   };
 
@@ -33,13 +32,25 @@ function StoreSelectPage() {
         </thead>
         <tbody>
           {dummyStores.map((store, index) => (
-            <tr
-              key={index}
-              style={{ borderBottom: '1px solid #ccc', cursor: 'pointer' }}
-              onClick={() => handleSelect(store)}
-            >
+            <tr key={index} style={{ borderBottom: '1px solid #ccc' }}>
               <td style={{ padding: '10px' }}>➡</td>
-              <td>{store.name}</td>
+              <td>
+                <button
+                  onClick={() => handleSelect(store)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    margin: 0,
+                    textAlign: 'left',
+                    width: '100%',
+                    fontSize: '16px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {store.name}
+                </button>
+              </td>
               <td style={{ textAlign: 'right' }}>{store.distance}</td>
             </tr>
           ))}
