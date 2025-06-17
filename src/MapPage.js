@@ -8,7 +8,7 @@ function MapPage() {
   const [data, setData] = useState([]);
   const [slider_pc1, setSliderPc1] = useState(50);
   const [slider_pc2, setSliderPc2] = useState(50);
-  const [zoomLevel, setZoomLevel] = useState(() => parseFloat(localStorage.getItem('zoomLevel')) || 2.0);
+  const [zoomLevel, setZoomLevel] = useState(() => parseFloat(localStorage.getItem('zoomLevel')) || 2.5);
   const [userRatings, setUserRatings] = useState({});
 
   useEffect(() => {
