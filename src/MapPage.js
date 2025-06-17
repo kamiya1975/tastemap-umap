@@ -226,8 +226,8 @@ function MapPage() {
         />
       </div>
 
-      <div style={{ marginBottom: '20px' }}>
-       <button onClick={handleReset}>初期状態に戻す</button>
+      <div style={{ marginBottom: '10px' }}>
+       <button onClick={handleReset}>更新状態</button>
       </div>
 
       {/* ズーム */}
