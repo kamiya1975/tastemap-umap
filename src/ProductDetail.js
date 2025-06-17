@@ -134,15 +134,7 @@ function ProductDetail() {
       <div style={{ marginTop: '30px' }}>
         <h3>この味に近いワインを再検索</h3>
 
-        <div style={{ marginBottom: '15px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-            <span>← 軽やか</span>
-            <span>コクあり →</span>
-          </div>
-          <input type="range" min="0" max="100" value={sliderPc1} onChange={e => setSliderPc1(Number(e.target.value))} style={{ width: '100%' }} />
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
+                <div style={{ marginBottom: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
             <span>← 甘さ控えめ</span>
             <span>甘め →</span>
@@ -150,6 +142,14 @@ function ProductDetail() {
           <input type="range" min="0" max="100" value={sliderPc2} onChange={e => setSliderPc2(Number(e.target.value))} style={{ width: '100%' }} />
         </div>
       </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+            <span>← 軽やか</span>
+            <span>コクあり →</span>
+          </div>
+          <input type="range" min="0" max="100" value={sliderPc1} onChange={e => setSliderPc1(Number(e.target.value))} style={{ width: '100%' }} />
+        </div>
 
       {similarWines.length > 0 && (
         <div style={{ marginTop: '30px' }}>
