@@ -227,7 +227,7 @@ function MapPage() {
       </div>
 
       <div style={{ marginBottom: '10px' }}>
-       <button onClick={handleReset}>更新状態</button>
+       <button onClick={handleReset}>MAP初期化</button>
       </div>
 
       {/* ズーム */}

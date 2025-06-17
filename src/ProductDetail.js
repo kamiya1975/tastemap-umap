@@ -130,17 +130,26 @@ function ProductDetail() {
       </div>
 
       {similarWines.length > 0 && (
-        <div style={{ marginTop: '30px' }}>
-          <h3>この味に近いワイン</h3>
-          <ul>
-            {similarWines.map((wine, index) => (
-              <li key={wine.JAN} style={{ marginBottom: '10px' }}>
-                {index + 1}. {wine.商品名} ({wine.Type}) – 距離: {wine.distance.toFixed(2)}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+  <div style={{ marginTop: '30px' }}>
+    <h3>この味に近いワイン</h3>
+    <ul>
+      {similarWines.map((wine, index) => {
+        const priceText =
+          wine.希望小売価格 !== null && wine.希望小売価格 !== undefined
+            ? `${parseInt(wine.希望小売価格).toLocaleString()} 円`
+            : '価格未設定';
+
+        return (
+          <li key={wine.JAN} style={{ marginBottom: '10px' }}>
+            {index + 1}. {wine.商品名}（{wine.Type}） - {priceText}
+          </li>
+        );
+      })}
+    </ul>
+  </div>
+)}
+
+    {/* ✅ 親divをきちんと閉じる */}
     </div>
   );
 }
