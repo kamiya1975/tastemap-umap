@@ -34,7 +34,9 @@ function ProductDetail() {
           const values = row.split(',');
           const obj = {};
           headers.forEach((h, i) => {
-            obj[h.trim()] = isNaN(values[i]) ? values[i].trim() : parseFloat(values[i]);
+            const raw = values[i]?.trim();
+            const cleaned = raw?.replace(/^="+?|"+$/g, ''); // ="JANコード"などのExcel形式を削除
+            obj[h.trim()] = isNaN(cleaned) ? cleaned : parseFloat(cleaned);
           });
           return obj;
         });
@@ -42,14 +44,15 @@ function ProductDetail() {
 
       const pcaData = parseCSV(pcaText);
       const metaData = parseCSV(metaText);
-      const metaMap = Object.fromEntries(metaData.map(d => [String(d.JAN), d]));
+      const metaMap = Object.fromEntries(metaData.map(d => [String(d.JAN).trim(), d]));
 
       const merged = pcaData.map(d => ({
         ...d,
-        ...metaMap[d.JAN]  // 希望小売価格やTypeなどを補完
+        ...metaMap[String(d.JAN).trim()]
       }));
 
       setData(merged);
+
       const target = merged.find(d => String(d.JAN).trim() === String(jan).trim());
       setTargetWine(target);
 
@@ -110,6 +113,13 @@ function ProductDetail() {
 
       <h2>{targetWine?.商品名 || '商品名を取得中...'}</h2>
       <p><strong>JANコード：</strong>{jan}</p>
+
+      {!targetWine && (
+        <p style={{ color: 'red', marginTop: '10px' }}>
+          商品情報の取得に失敗しました。JANコードをご確認ください。
+        </p>
+      )}
+
       <p>ここに商品名・味の特徴・香り・価格・画像などを表示していきます。</p>
 
       <div style={{ marginTop: '20px' }}>
