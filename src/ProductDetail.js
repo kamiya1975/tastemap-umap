@@ -23,36 +23,48 @@ function ProductDetail() {
   };
 
   useEffect(() => {
-    fetch('/pca_result.csv')
-      .then(res => res.text())
-      .then(text => {
-        const rows = text.trim().split('\n');
+    Promise.all([
+      fetch('/pca_result.csv').then(res => res.text()),
+      fetch('/Merged_TasteDataDB15.csv').then(res => res.text())
+    ]).then(([pcaText, metaText]) => {
+      const parseCSV = (csvText) => {
+        const rows = csvText.trim().split('\n');
         const headers = rows[0].split(',');
-        const parsed = rows.slice(1).map(row => {
+        return rows.slice(1).map(row => {
           const values = row.split(',');
           const obj = {};
           headers.forEach((h, i) => {
-            obj[h] = isNaN(values[i]) ? values[i] : parseFloat(values[i]);
+            obj[h.trim()] = isNaN(values[i]) ? values[i].trim() : parseFloat(values[i]);
           });
           return obj;
         });
+      };
 
-        setData(parsed);
-        const target = parsed.find(d => String(d.JAN).trim() === String(jan).trim());
-        setTargetWine(target);
+      const pcaData = parseCSV(pcaText);
+      const metaData = parseCSV(metaText);
+      const metaMap = Object.fromEntries(metaData.map(d => [String(d.JAN), d]));
 
-        if (target) {
-          const xValues = parsed.map(d => d.BodyAxis);
-          const yValues = parsed.map(d => d.SweetAxis);
-          const x_min = Math.min(...xValues);
-          const x_max = Math.max(...xValues);
-          const y_min = Math.min(...yValues);
-          const y_max = Math.max(...yValues);
+      const merged = pcaData.map(d => ({
+        ...d,
+        ...metaMap[d.JAN]  // 希望小売価格やTypeなどを補完
+      }));
 
-          setSliderPc1(((target.BodyAxis - x_min) / (x_max - x_min)) * 100);
-          setSliderPc2(((target.SweetAxis - y_min) / (y_max - y_min)) * 100);
-        }
-      });
+      setData(merged);
+      const target = merged.find(d => String(d.JAN).trim() === String(jan).trim());
+      setTargetWine(target);
+
+      if (target) {
+        const xValues = merged.map(d => d.BodyAxis);
+        const yValues = merged.map(d => d.SweetAxis);
+        const x_min = Math.min(...xValues);
+        const x_max = Math.max(...xValues);
+        const y_min = Math.min(...yValues);
+        const y_max = Math.max(...yValues);
+
+        setSliderPc1(((target.BodyAxis - x_min) / (x_max - x_min)) * 100);
+        setSliderPc2(((target.SweetAxis - y_min) / (y_max - y_min)) * 100);
+      }
+    });
   }, [jan]);
 
   useEffect(() => {
@@ -130,26 +142,24 @@ function ProductDetail() {
       </div>
 
       {similarWines.length > 0 && (
-  <div style={{ marginTop: '30px' }}>
-    <h3>この味に近いワイン</h3>
-    <ul>
-      {similarWines.map((wine, index) => {
-        const priceText =
-          wine.希望小売価格 !== null && wine.希望小売価格 !== undefined
-            ? `${parseInt(wine.希望小売価格).toLocaleString()} 円`
-            : '価格未設定';
+        <div style={{ marginTop: '30px' }}>
+          <h3>この味に近いワイン</h3>
+          <ul>
+            {similarWines.map((wine, index) => {
+              const priceText =
+                wine.希望小売価格 !== null && wine.希望小売価格 !== undefined
+                  ? `${parseInt(wine.希望小売価格).toLocaleString()} 円`
+                  : '価格未設定';
 
-        return (
-          <li key={wine.JAN} style={{ marginBottom: '10px' }}>
-            {index + 1}. {wine.商品名}（{wine.Type}） - {priceText}
-          </li>
-        );
-      })}
-    </ul>
-  </div>
-)}
-
-    {/* ✅ 親divをきちんと閉じる */}
+              return (
+                <li key={wine.JAN} style={{ marginBottom: '10px' }}>
+                  {index + 1}. {wine.商品名}（{wine.Type}） - {priceText}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
