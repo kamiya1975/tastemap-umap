@@ -25,15 +25,14 @@ function StoreSelectPage() {
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ backgroundColor: '#ddd' }}>
-            <th style={{ textAlign: 'left' }}>店舗一覧</th>
-            <th style={{ textAlign: 'right' }}>距離</th>
+            <th style={{ textAlign: 'left', width: '70%' }}>店舗一覧</th>
+            <th style={{ textAlign: 'right', width: '30%' }}>距離</th>
           </tr>
         </thead>
         <tbody>
           {dummyStores.map((store, index) => (
             <tr key={index} style={{ borderBottom: '1px solid #ccc' }}>
-              <td style={{ padding: '10px' }}>➡</td>
-              <td>
+              <td colSpan="2" style={{ padding: '10px 0' }}>
                 <button
                   onClick={() => handleSelect(store)}
                   style={{
@@ -45,12 +44,15 @@ function StoreSelectPage() {
                     width: '100%',
                     fontSize: '16px',
                     cursor: 'pointer',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
                   }}
                 >
-                  {store.name}
+                  <span>➡ {store.name}</span>
+                  <span>{store.distance}</span>
                 </button>
               </td>
-              <td style={{ textAlign: 'right' }}>{store.distance}</td>
             </tr>
           ))}
         </tbody>
