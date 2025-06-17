@@ -1,3 +1,4 @@
+// src/MapPage.js
 import React, { useState, useEffect, useMemo } from 'react';
 import Plot from 'react-plotly.js';
 import './App.css';
@@ -7,8 +8,6 @@ function MapPage() {
   const [data, setData] = useState([]);
   const [slider_pc1, setSliderPc1] = useState(50);
   const [slider_pc2, setSliderPc2] = useState(50);
-  const [initial_pc1, setInitialPc1] = useState(50);
-  const [initial_pc2, setInitialPc2] = useState(50);
   const [zoomLevel, setZoomLevel] = useState(() => parseFloat(localStorage.getItem('zoomLevel')) || 2.0);
   const [userRatings, setUserRatings] = useState({});
 
@@ -53,23 +52,6 @@ function MapPage() {
         ...metaMap[String(d.JAN)]
       }));
 
-      const blendF = merged.find(d => d.JAN === 'blendF');
-      const xValues = merged.map(d => d.BodyAxis);
-      const yValues = merged.map(d => d.SweetAxis);
-      const x_min = Math.min(...xValues);
-      const x_max = Math.max(...xValues);
-      const y_min = Math.min(...yValues);
-      const y_max = Math.max(...yValues);
-
-      if (blendF) {
-        const pc1 = ((blendF.BodyAxis - x_min) / (x_max - x_min)) * 100;
-        const pc2 = ((blendF.SweetAxis - y_min) / (y_max - y_min)) * 100;
-        setInitialPc1(pc1);
-        setInitialPc2(pc2);
-        setSliderPc1(pc1);
-        setSliderPc2(pc2);
-      }
-
       setData(merged);
     });
   }, []);
@@ -82,11 +64,23 @@ function MapPage() {
   const y_min = Math.min(...yValues);
   const y_max = Math.max(...yValues);
 
-  // ✅ スライダー値を座標に変換（線形補間）
+  const range_left_x = blendF ? blendF.BodyAxis - x_min : 0;
+  const range_right_x = blendF ? x_max - blendF.BodyAxis : 0;
+  const range_down_y = blendF ? blendF.SweetAxis - y_min : 0;
+  const range_up_y = blendF ? y_max - blendF.SweetAxis : 0;
+
   const target = useMemo(() => ({
-    x: x_min + (slider_pc1 / 100) * (x_max - x_min),
-    y: y_min + (slider_pc2 / 100) * (y_max - y_min)
-  }), [slider_pc1, slider_pc2, x_min, x_max, y_min, y_max]);
+    x: blendF
+      ? slider_pc1 <= 50
+        ? blendF.BodyAxis - ((50 - slider_pc1) / 50) * range_left_x
+        : blendF.BodyAxis + ((slider_pc1 - 50) / 50) * range_right_x
+      : 0,
+    y: blendF
+      ? slider_pc2 <= 50
+        ? blendF.SweetAxis - ((50 - slider_pc2) / 50) * range_down_y
+        : blendF.SweetAxis + ((slider_pc2 - 50) / 50) * range_up_y
+      : 0,
+  }), [slider_pc1, slider_pc2, blendF, range_left_x, range_right_x, range_down_y, range_up_y]);
 
   const distances = useMemo(() => {
     return data.filter(d => d.JAN !== 'blendF')
@@ -131,8 +125,15 @@ function MapPage() {
   ), [distances, userRatings]);
 
   const zoomFactor = 1 / zoomLevel;
-  const x_range = blendF ? [blendF.BodyAxis - (x_max - x_min) * zoomFactor / 2, blendF.BodyAxis + (x_max - x_min) * zoomFactor / 2] : [x_min, x_max];
-  const y_range = blendF ? [blendF.SweetAxis - (y_max - y_min) * zoomFactor / 2, blendF.SweetAxis + (y_max - y_min) * zoomFactor / 2] : [y_min, y_max];
+  const x_range = blendF
+    ? [blendF.BodyAxis - Math.max(range_left_x, range_right_x) * zoomFactor,
+       blendF.BodyAxis + Math.max(range_left_x, range_right_x) * zoomFactor]
+    : [x_min, x_max];
+
+  const y_range = blendF
+    ? [blendF.SweetAxis - Math.max(range_down_y, range_up_y) * zoomFactor,
+       blendF.SweetAxis + Math.max(range_down_y, range_up_y) * zoomFactor]
+    : [y_min, y_max];
 
   const plotData = [
     ...typeList.map(type => ({
@@ -174,41 +175,45 @@ function MapPage() {
     <div style={{ padding: '10px' }}>
       <h2>基準のワインを飲んだ印象は？</h2>
 
+      {/* 甘味スライダー */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
           <span>← こんなに甘みは不要</span>
           <span>もっと甘みが欲しい →</span>
         </div>
-        <input 
-         type="range" 
-         min={-50}
-         max={50} 
-         value={slider_pc2 - initial_pc2}
-         style={{ width: '100%' }} 
-         onChange={(e) => setSliderPc2(initial_pc2 + Number(e.target.value))}
-         />
-         </div>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={slider_pc2}
+          style={{ width: '100%' }}
+          onChange={(e) => setSliderPc2(Number(e.target.value))}
+        />
+      </div>
 
+      {/* コクスライダー */}
       <div style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', marginBottom: '5px' }}>
           <span>← もっと軽やかが良い</span>
           <span>濃厚なコクが欲しい →</span>
         </div>
-        <input 
-         type="range" 
-         min={-50}
-         max={50} 
-         value={slider_pc1 - initial_pc1}
-         style={{ width: '100%' }} 
-         onChange={(e) => setSliderPc1(initial_pc1 + Number(e.target.value))}
-         />
-         </div>
-
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
-        <button onClick={() => setZoomLevel(z => Math.min(z + 1.0, 5))}>+</button>
-        <button onClick={() => setZoomLevel(z => Math.max(z - 1.0, 0.2))}>-</button>
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={slider_pc1}
+          style={{ width: '100%' }}
+          onChange={(e) => setSliderPc1(Number(e.target.value))}
+        />
       </div>
 
+      {/* ズーム */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginBottom: '10px' }}>
+        <button onClick={() => setZoomLevel(z => Math.min(z + 1.0, 5))}>＋</button>
+        <button onClick={() => setZoomLevel(z => Math.max(z - 1.0, 0.2))}>−</button>
+      </div>
+
+      {/* 散布図 */}
       <div className="plot-container">
         <Plot
           useResizeHandler={true}
