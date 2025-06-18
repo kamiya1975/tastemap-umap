@@ -21,7 +21,7 @@ function StoreSelectPage() {
 
   return (
     <div style={{ padding: '20px' }}>
-      <h2>購入した店舗を選んでください</h2>
+      <h2>「基準のワイン」を購入した店舗を選んでください</h2>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr style={{ backgroundColor: '#ddd' }}>
